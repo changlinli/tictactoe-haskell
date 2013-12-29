@@ -10,4 +10,4 @@ minimax algorithm to determine what moves to play.
 How to build:
 -------------
 
-This was built using GHC.
+This was built using GHC. Hence in order to build, simply run `ghc --make game.hs`.
