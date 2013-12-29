@@ -4,7 +4,8 @@ Tic-tac-toe in Haskell
 What it is:
 -----------
 
-Implementing tic-tac-toe as well as a game AI in Haskell!
+Implementing tic-tac-toe as well as a game AI in Haskell! The game AI uses a
+minimax algorithm to determine what moves to play.
 
 How to build:
 -------------
