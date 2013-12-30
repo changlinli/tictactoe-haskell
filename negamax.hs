@@ -9,6 +9,11 @@ extendedNum2Num NegInf = error "Things went wrong!"
 extendedNum2Num PosInf = error "Things went wrong!"
 extendedNum2Num (Only x) = x
 
-evaluate :: ((NegamaxTree (ExtendedNum Integer) state) -> ExtendedNum Integer) -> (NegamaxTree (ExtendedNum Integer) state) -> (ExtendedNum Integer)
-evaluate f EmptyTree = NegInf
-{-evaluate f (Node x state) = foldl (\x (Node a bs) -> max x a) x ys-}
+evaluateState :: (state -> ExtendedNum Integer) -> state -> ExtendedNum Integer
+evaluateState f state = f state
+
+evaluateNode :: (state -> ExtendedNum Integer)
+evaluateNode state = Only 0
+
+evaluateTree :: NegamaxTree a state -> state
+evaluateTree (Node a state []) = state
