@@ -1,10 +1,10 @@
-import Data.Sequence as DS
-import Data.Foldable as DF
+import qualified Data.Sequence as DS
+import qualified Data.Foldable as DF
 
 boardSize = 3
 data Players = Player1 | Player2 deriving Eq
 type GameBoardUnit = Maybe Players
-type GameBoard = Seq (Seq GameBoardUnit)
+type GameBoard = DS.Seq (DS.Seq GameBoardUnit)
 data GameState = PlayState { board :: GameBoard, currentPlayer :: Players } | Player1Win | Player2Win | Tie
 
 nextPlayer :: Players -> Players
@@ -12,7 +12,7 @@ nextPlayer Player1 = Player2
 nextPlayer Player2 = Player1
 
 isValidMove :: (Int, Int) -> GameBoard -> Bool
-isValidMove (a, b) board = if index (index board b) a == Nothing && a < boardSize && b < boardSize
+isValidMove (a, b) board = if DS.index (DS.index board b) a == Nothing && a < boardSize && b < boardSize
            then True
            else False
 
@@ -31,7 +31,7 @@ playMove (a, b) (PlayState board player)
         | isValidMove (a, b) board = PlayState { board=newBoard, currentPlayer=nextPlayer player }
         | otherwise = error "Invalid Move!"
         where 
-                newBoard = DS.update b (DS.update a (Just player) (index board b)) board
+                newBoard = DS.update b (DS.update a (Just player) (DS.index board b)) board
 
 blah = DS.fromList [DS.fromList [1, 2, 3], 
                     DS.fromList [1, 2, 3], 
@@ -41,8 +41,8 @@ blah = DS.fromList [DS.fromList [1, 2, 3],
 diagonals :: GameBoard -> [[GameBoardUnit]]
 diagonals board = 
         [
-                [index (index board 1) 1, index (index board 2) 2, index (index board 3) 3],
-                [index (index board 1) 3, index (index board 2) 2, index (index board 3) 1]
+                [DS.index (DS.index board 1) 1, DS.index (DS.index board 2) 2, DS.index (DS.index board 3) 3],
+                [DS.index (DS.index board 1) 3, DS.index (DS.index board 2) 2, DS.index (DS.index board 3) 1]
         ]
 
 rows :: GameBoard -> [[GameBoardUnit]]
@@ -53,3 +53,9 @@ rows board = DF.toList $ fmap DF.toList board
 
 {-checkGameOver :: GameState -> GameState-}
 {-checkGameOver PlayState board _ = any-}
+
+checkDiagonal :: GameBoard -> Maybe Players
+checkDiagonal board 
+        | [Just Player1, Just Player1, Just Player1] `elem` diagonals board = Just Player1
+        | [Just Player2, Just Player2, Just Player2] `elem` diagonals board = Just Player2
+        | otherwise = Nothing
