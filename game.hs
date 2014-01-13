@@ -18,6 +18,7 @@ isValidMove (a, b) board = if DS.index (DS.index board b) a == Nothing && a < bo
 
 startingBoard :: GameBoard
 startingBoard = DS.fromList [DS.fromList [Nothing, Nothing, Nothing], DS.fromList [Nothing, Nothing, Nothing], DS.fromList [Nothing, Nothing, Nothing]]
+-- startingBoard = [[Nothing, Nothing, Nothing], [Nothing, Nothing, Nothing], [Nothing, Nothing, Nothing]]
 
 startingState :: GameState
 startingState = PlayState { board=startingBoard, currentPlayer=Player1 }
