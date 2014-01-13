@@ -60,3 +60,5 @@ checkDiagonal board
         | [Just Player1, Just Player1, Just Player1] `elem` diagonals board = Just Player1
         | [Just Player2, Just Player2, Just Player2] `elem` diagonals board = Just Player2
         | otherwise = Nothing
+
+rpt = cycle
