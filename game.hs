@@ -6,7 +6,7 @@ boardSize = 3
 data Players = Player1 | Player2 deriving (Eq, Show)
 type GameBoardUnit = Maybe Players
 type GameBoard = [[GameBoardUnit]]
-data GameState = PlayState { board :: GameBoard, currentPlayer :: Players } | Player1Win | Player2Win | Tie
+data GameState = PlayState { board :: GameBoard, currentPlayer :: Players } | Player1Win | Player2Win | Tie deriving Show
 
 nextPlayer :: Players -> Players
 nextPlayer Player1 = Player2
@@ -37,9 +37,10 @@ playMove (a, b) (PlayState board player)
 
 -- TODO: Make diagonals more general
 getDiagonals :: GameBoard -> [[GameBoardUnit]]
-getDiagonals [[ x1, _, x3 ],
-        [_, y1, _],
-        [z1, _, z3]] = [[x1, y1, z3], [x3, y1, z1]]
+getDiagonals 
+        [[ x1, _ , x3],
+        [_, y1 , _],
+        [z1, _ , z3]] = [[x1, y1, z3], [x3, y1, z1]]
 
 -- Yes I know, this does nothing, but it might if GameBoard changes from
 -- just being a list of lists
@@ -86,9 +87,9 @@ updateBoard :: GameBoard -> (Int, Int) -> GameBoardUnit -> GameBoard
 updateBoard oldBoard (x, y) value = updateList oldBoard (updateList (oldBoard !! y) value x) y
 
 checkThreeInARow :: [[GameBoardUnit]] -> Maybe Players
-checkThreeInARow board
-        | [Just Player1, Just Player1, Just Player1] `elem` getDiagonals board = Just Player1
-        | [Just Player2, Just Player2, Just Player2] `elem` getDiagonals board = Just Player2
+checkThreeInARow listOfRows
+        | [Just Player1, Just Player1, Just Player1] `elem` listOfRows = Just Player1
+        | [Just Player2, Just Player2, Just Player2] `elem` listOfRows = Just Player2
         | otherwise = Nothing
 
 checkDiagonals :: GameBoard -> Maybe Players
