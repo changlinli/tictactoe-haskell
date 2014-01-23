@@ -13,7 +13,6 @@ nextPlayer Player1 = Player2
 nextPlayer Player2 = Player1
 
 isValidMove :: (Int, Int) -> GameBoard -> Bool
-{-isValidMove (a, b) board = if DS.index (DS.index board b) a == Nothing && a < boardSize && b < boardSize-}
 isValidMove (a, b) board = if (board !! b) !! a == Nothing && a < boardSize && b < boardSize
            then True
            else False
