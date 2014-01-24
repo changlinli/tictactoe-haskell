@@ -1,6 +1,11 @@
 {-# LANGUAGE FlexibleInstances #-}
 
-data ExtendedNum a = Only a | NegInf | PosInf
+module Negamax
+(
+        ExtendedNum
+) where
+
+data ExtendedNum a = Only a | NegInf | PosInf deriving (Eq, Show)
 data NegamaxTree a state = EmptyTree | Node a state [NegamaxTree a state]
 
 instance Num (ExtendedNum Integer) where
@@ -14,6 +19,11 @@ instance Num (ExtendedNum Integer) where
         abs (Only a) = Only (abs a)
         signum (Only a) = Only (signum a)
         fromInteger a = Only a
+
+instance Functor ExtendedNum where
+        fmap f (Only a) = Only (f a)
+        fmap f NegInf = NegInf
+        fmap f PosInf = PosInf
 
 singleton :: a -> state -> NegamaxTree a state
 singleton x state = Node x state [ EmptyTree ]
