@@ -96,3 +96,29 @@ checkDiagonals board = checkThreeInARow (getDiagonals board)
 
 showGameBoard :: GameBoard -> String
 showGameBoard board = show board
+
+counter :: Int -> IO ()
+counter x = print x >>= (\y -> counter (x + 1))
+
+playGame :: GameState -> IO ()
+playGame Player1Win = putStrLn "Player 1 wins!"
+playGame Player2Win = putStrLn "Player 2 wins!"
+playGame Tie = putStrLn "There is a tie!"
+{-playGame PlayState {board=board, currentPlayer=player} = putStrLn (showGameBoard board) >> getInput >>= (\x -> return ((flip playMove) PlayState {board=board, currentPlayer=player} x)) >>= (\y -> return (checkGameOver y)) >>= playGame-}
+playGame PlayState {board=board, currentPlayer=player} = do
+        putStrLn (showGameBoard board)
+        x <- getInput
+        y <- return ((flip playMove) PlayState {board=board, currentPlayer=player} x)
+        z <- return (checkGameOver y)
+        playGame z
+
+getInput :: IO (Int, Int)
+getInput = putStrLn "Enter a move!" >>= (\x -> fmap read getLine)
+
+main :: IO ()
+main = playGame startingState
+{-main = putStrLn "Enter a number!" >>= (\y -> (fmap read getLine) >>= (\x -> counter x))-}
+{-main = do-}
+        {-putStrLn "Enter a number!"-}
+        {-x <- getLine-}
+        {-counter (read x :: Int)-}
