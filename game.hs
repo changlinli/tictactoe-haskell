@@ -79,16 +79,16 @@ checkGameOver (PlayState board player)
         | checkRows board == Just Player2 = Player2Win
         | checkCols board == Just Player1 = Player1Win
         | checkCols board == Just Player2 = Player2Win
-        | checkDraw board = Tie
+        | checkFull board = Tie
         | otherwise = PlayState {board=board, currentPlayer=player}
 
-checkDraw :: GameBoard -> Bool
-checkDraw [row] 
+checkFull :: GameBoard -> Bool
+checkFull [row] 
         | Nothing `elem` row = False
         | otherwise = True
-checkDraw (x:xs)
-        | not (checkDraw [x]) = checkDraw [x]
-        | otherwise = checkDraw xs
+checkFull (x:xs)
+        | not (checkFull [x]) = checkFull [x]
+        | otherwise = checkFull xs
 
 updateList :: [a] -> a -> Int -> [a]
 updateList (x:xs) newItem index
