@@ -108,7 +108,6 @@ checkDiagonals :: GameBoard -> Maybe Players
 checkDiagonals board = checkThreeInARow (getDiagonals board)
 
 showGameBoard :: GameBoard -> String
-{-showGameBoard board = show board-}
 showGameBoard
         [[a0, a1, a2],
         [b0, b1, b2],
