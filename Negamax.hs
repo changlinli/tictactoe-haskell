@@ -2,7 +2,7 @@
 
 module Negamax
 (
-        ExtendedNum
+        ExtendedNum (..)
 ) where
 
 data ExtendedNum a = Only a | NegInf | PosInf deriving (Eq, Show)
@@ -14,10 +14,32 @@ instance Num (ExtendedNum Integer) where
         NegInf + Only a = NegInf
         Only a + PosInf = PosInf
         PosInf + Only a = PosInf
-        Only a - Only b = Only (a - b)
+
+        x - y = ((signum x) * x) + ((signum y) * y)
+
         Only a * Only b = Only (a * b)
+        Only a * PosInf
+                | a == 0 = Only 0
+                | signum a == 1 = PosInf
+                | signum a == -1 = NegInf
+        Only a * PosInf
+                | a == 0 = Only 0
+                | signum a == 1 = PosInf
+                | signum a == -1 = NegInf
+        PosInf * PosInf = PosInf
+        NegInf * NegInf = PosInf
+        PosInf * NegInf = NegInf
+        NegInf * x = x * NegInf
+        PosInf * x = x * PosInf
+
         abs (Only a) = Only (abs a)
+        abs NegInf = PosInf
+        abs PosInf = PosInf
+        
         signum (Only a) = Only (signum a)
+        signum PosInf = Only 1
+        signum NegInf = Only (-1)
+
         fromInteger a = Only a
 
 instance Functor ExtendedNum where
