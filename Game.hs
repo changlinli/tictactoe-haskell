@@ -5,9 +5,10 @@
 import qualified Data.Sequence as DS
 import qualified Data.Foldable as DF
 import qualified Data.List as DL
+import qualified Negamax
 
 boardSize = 3
-data Players = Player1 | Player2 deriving Eq
+data Players = Player1 | Player2 deriving (Eq, Show)
 type GameBoardUnit = Maybe Players
 
 -- The use of all the pragmas was to justify this syntactic sugar of the
@@ -19,7 +20,7 @@ instance Show GameBoardUnit where
         show Nothing = " "
 
 type GameBoard = [[GameBoardUnit]]
-data GameState = PlayState { board :: GameBoard, currentPlayer :: Players } | Player1Win | Player2Win | Tie
+data GameState = PlayState { board :: GameBoard, currentPlayer :: Players } | Player1Win | Player2Win | Tie deriving Show
 
 nextPlayer :: Players -> Players
 nextPlayer Player1 = Player2
@@ -133,6 +134,49 @@ playGame PlayState {board=board, currentPlayer=player} = do
 
 getInput :: IO (Int, Int)
 getInput = putStrLn "Enter a move!" >>= (\x -> fmap read getLine)
+
+evalFunc1 :: GameState -> Negamax.ExtendedNum Integer
+-- WHOA! Haskell will automatically promote 0 to Only 0!
+evalFunc1 Tie = 0
+evalFunc1 Player1Win = Negamax.PosInf
+evalFunc1 Player2Win = Negamax.NegInf
+evalFunc1 x = 0
+
+evalFunc2 :: GameState -> Negamax.ExtendedNum Integer
+evalFunc2 Tie = 0
+evalFunc2 Player1Win = Negamax.NegInf
+evalFunc2 Player2Win = Negamax.PosInf
+evalFunc2 x = 0
+
+enumPair :: (Int, Int) -> (Int, Int) -> [(Int, Int)]
+enumPair (a0, b0) (a1, b1) = [a0 .. a1] >>= \x -> [b0 .. b1] >>= \y -> return (x, y)
+
+allPossiblePairs :: [(Int, Int)]
+allPossiblePairs = enumPair (0, 0) (3, 3)
+
+generateValidMoves :: GameState -> [(Int, Int)] -> [(Int, Int)]
+generateValidMoves (PlayState board player) xs = filter (flip isValidMove board) xs
+
+generateNegamaxTree :: GameState -> Negamax.NegamaxTree GameState
+generateNegamaxTree Player1Win = Negamax.Node Player1Win []
+generateNegamaxTree Player2Win = Negamax.Node Player2Win []
+generateNegamaxTree Tie = Negamax.Node Tie []
+generateNegamaxTree state = Negamax.Node state listOfNodes
+        where listOfNodes = map (generateNegamaxTree . (flip playMove state)) validMoves
+              validMoves = generateValidMoves state allPossiblePairs
+
+generateListOfTreesAndMoves :: GameState -> [Negamax.NegamaxTree GameState]
+generateListOfTreesAndMoves state = map generateNegamaxTree (map (flip playMove state) validMoves) where
+        validMoves = generateValidMoves state allPossiblePairs
+
+
+playGameAI :: GameState -> IO ()
+playGameAI Player1Win = putStrLn "Player 1 wins!"
+playGameAI Player2Win = putStrLn "Player 2 wins!"
+playGameAI Tie = putStrLn "There is a tie!"
+playGameAI state@(PlayState {board=board, currentPlayer=player})
+        | player == Player1 = putStrLn (showGameBoard board) >> getInput >>= (\x -> return ((flip playMove) PlayState {board=board, currentPlayer=player} x)) >>= (\y -> return (checkGameOver y)) >>= playGameAI
+        {-| player == Player2 = putStrLn (showGameBoard board) >>-}
 
 main :: IO ()
 main = playGame startingState
