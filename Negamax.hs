@@ -42,6 +42,15 @@ instance Num (ExtendedNum Integer) where
 
         fromInteger a = Only a
 
+instance (Ord a) => Ord (ExtendedNum a) where
+        Only a <= Only b = a <= b
+        NegInf <= Only a = True
+        Only a <= NegInf = False
+        PosInf <= Only a = False
+        Only a <= PosInf = True
+        NegInf <= PosInf = True
+        PosInf <= NegInf = False
+
 instance Functor ExtendedNum where
         fmap f (Only a) = Only (f a)
         fmap f NegInf = NegInf
