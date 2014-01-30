@@ -20,7 +20,7 @@ instance Show GameBoardUnit where
         show Nothing = " "
 
 type GameBoard = [[GameBoardUnit]]
-data GameState = PlayState { board :: GameBoard, currentPlayer :: Players } | Player1Win | Player2Win | Tie deriving Show
+data GameState = PlayState { board :: GameBoard, currentPlayer :: Players } | Player1Win | Player2Win | Tie deriving (Show, Eq)
 
 nextPlayer :: Players -> Players
 nextPlayer Player1 = Player2
@@ -135,40 +135,44 @@ playGame PlayState {board=board, currentPlayer=player} = do
 getInput :: IO (Int, Int)
 getInput = putStrLn "Enter a move!" >>= (\x -> fmap read getLine)
 
-evalFunc1 :: GameState -> Negamax.ExtendedNum Integer
--- WHOA! Haskell will automatically promote 0 to Only 0!
-evalFunc1 Tie = 0
-evalFunc1 Player1Win = Negamax.PosInf
-evalFunc1 Player2Win = Negamax.NegInf
-evalFunc1 x = 0
-
-evalFunc2 :: GameState -> Negamax.ExtendedNum Integer
-evalFunc2 Tie = 0
-evalFunc2 Player1Win = Negamax.NegInf
-evalFunc2 Player2Win = Negamax.PosInf
-evalFunc2 x = 0
+evalFunc :: GameState -> Negamax.ExtendedNum Integer
+evalFunc state@(PlayState {board=board, currentPlayer=player})
+        | player == Player1 && checkGameOver state == Player1Win = Negamax.PosInf
+        | player == Player2 && checkGameOver state == Player2Win = Negamax.PosInf
+        | player == Player1 && checkGameOver state == Player2Win = Negamax.NegInf
+        | player == Player2 && checkGameOver state == Player1Win = Negamax.NegInf
+        | checkGameOver state == Tie = Negamax.Only 0
+        | otherwise = Negamax.Only 0
 
 enumPair :: (Int, Int) -> (Int, Int) -> [(Int, Int)]
 enumPair (a0, b0) (a1, b1) = [a0 .. a1] >>= \x -> [b0 .. b1] >>= \y -> return (x, y)
 
 allPossiblePairs :: [(Int, Int)]
-allPossiblePairs = enumPair (0, 0) (3, 3)
+allPossiblePairs = enumPair (0, 0) (2, 2)
 
 generateValidMoves :: GameState -> [(Int, Int)] -> [(Int, Int)]
 generateValidMoves (PlayState board player) xs = filter (flip isValidMove board) xs
 
 generateNegamaxTree :: GameState -> Negamax.NegamaxTree GameState
-generateNegamaxTree Player1Win = Negamax.Node Player1Win []
-generateNegamaxTree Player2Win = Negamax.Node Player2Win []
-generateNegamaxTree Tie = Negamax.Node Tie []
-generateNegamaxTree state = Negamax.Node state listOfNodes
-        where listOfNodes = map (generateNegamaxTree . (flip playMove state)) validMoves
-              validMoves = generateValidMoves state allPossiblePairs
+generateNegamaxTree state@(PlayState board player)
+        | checkGameOver state /= state = Negamax.Node state []
+        | otherwise = Negamax.Node (checkGameOver state) listOfNodes
+                where listOfNodes = map (generateNegamaxTree . (flip playMove state)) validMoves
+                      validMoves = generateValidMoves state allPossiblePairs
 
-generateListOfTreesAndMoves :: GameState -> [Negamax.NegamaxTree GameState]
-generateListOfTreesAndMoves state = map generateNegamaxTree (map (flip playMove state) validMoves) where
+generateListOfTreesAndMoves :: GameState -> [(Negamax.NegamaxTree GameState, (Int, Int))]
+generateListOfTreesAndMoves state = map (\(x, y) -> (generateNegamaxTree x, y)) (map (\(a, b) -> (playMove a state, b)) validMovesTwoCopies) where
+        validMovesTwoCopies = zip validMoves validMoves
         validMoves = generateValidMoves state allPossiblePairs
 
+evaluateMove :: (Int, Int) -> GameState -> Negamax.ExtendedNum Integer
+evaluateMove (x, y) state = Negamax.Only (-1) * Negamax.evaluate (generateNegamaxTree (playMove (x, y) state)) evalFunc 10
+
+findBestMove :: GameState -> (Int, Int)
+findBestMove state = foldl1 biggerOne moveList where
+        biggerOne :: (Int, Int) -> (Int, Int) -> (Int, Int)
+        biggerOne acc newMove = if evaluateMove newMove state > evaluateMove acc state then newMove else acc
+        moveList = generateValidMoves state allPossiblePairs
 
 playGameAI :: GameState -> IO ()
 playGameAI Player1Win = putStrLn "Player 1 wins!"
@@ -176,7 +180,50 @@ playGameAI Player2Win = putStrLn "Player 2 wins!"
 playGameAI Tie = putStrLn "There is a tie!"
 playGameAI state@(PlayState {board=board, currentPlayer=player})
         | player == Player1 = putStrLn (showGameBoard board) >> getInput >>= (\x -> return ((flip playMove) PlayState {board=board, currentPlayer=player} x)) >>= (\y -> return (checkGameOver y)) >>= playGameAI
-        {-| player == Player2 = putStrLn (showGameBoard board) >>-}
+        | player == Player2 = putStrLn (showGameBoard board) >>= (\a -> return (findBestMove state)) >>= (\x -> return ((flip playMove) PlayState {board=board, currentPlayer=player} x)) >>= (\y -> return (checkGameOver y)) >>= playGameAI
 
 main :: IO ()
-main = playGame startingState
+main = playGameAI startingState
+
+nearlyWinningBoard1 :: GameBoard
+nearlyWinningBoard1 =
+        [
+                [Just Player1, Just Player1, Nothing],
+                [Just Player2, Just Player2, Just Player1],
+                [Just Player1, Just Player2, Just Player1]
+        ]
+
+nearlyWinningState1 :: GameState
+nearlyWinningState1 = PlayState nearlyWinningBoard1 Player1
+
+nearlyWinningBoard2 :: GameBoard
+nearlyWinningBoard2 =
+        [
+                [Just Player2, Nothing, Nothing],
+                [Nothing, Just Player2, Nothing],
+                [Just Player2, Just Player1, Just Player1]
+        ]
+
+nearlyWinningState2 :: GameState
+nearlyWinningState2 = PlayState nearlyWinningBoard2 Player2
+
+nearlyLosingBoard2 :: GameBoard
+nearlyLosingBoard2 =
+        [
+                [Just Player1, Nothing, Nothing],
+                [Just Player2, Just Player2, Just Player1],
+                [Just Player1, Nothing, Nothing]
+        ]
+
+nearlyLosingState2 :: GameState
+nearlyLosingState2 = PlayState nearlyLosingBoard2 Player2
+
+winningBoard :: GameBoard
+winningBoard =
+        [
+                [Just Player1, Just Player1, Just Player1],
+                [Just Player2, Just Player2, Just Player1],
+                [Just Player1, Just Player2, Just Player1]
+        ]
+
+winningState = PlayState winningBoard Player1

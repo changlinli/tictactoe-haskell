@@ -4,6 +4,7 @@
 import Test.Framework
 import Data.Char
 import Test.QuickCheck
+import Test.HUnit
 import Negamax
 
 instance Arbitrary (ExtendedNum Integer) where

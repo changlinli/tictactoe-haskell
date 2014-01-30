@@ -7,6 +7,7 @@ module Negamax
         evaluate
 ) where
 
+
 data ExtendedNum a = Only a | NegInf | PosInf deriving (Eq, Show)
 
 instance Num (ExtendedNum Integer) where
@@ -23,10 +24,10 @@ instance Num (ExtendedNum Integer) where
                 | a == 0 = Only 0
                 | signum a == 1 = PosInf
                 | signum a == -1 = NegInf
-        Only a * PosInf
+        Only a * NegInf
                 | a == 0 = Only 0
-                | signum a == 1 = PosInf
-                | signum a == -1 = NegInf
+                | signum a == 1 = NegInf
+                | signum a == -1 = PosInf
         PosInf * PosInf = PosInf
         NegInf * NegInf = PosInf
         PosInf * NegInf = NegInf
@@ -51,6 +52,8 @@ instance (Ord a) => Ord (ExtendedNum a) where
         Only a <= PosInf = True
         NegInf <= PosInf = True
         PosInf <= NegInf = False
+        PosInf <= PosInf = True
+        NegInf <= NegInf = True
 
 instance Functor ExtendedNum where
         fmap f (Only a) = Only (f a)
