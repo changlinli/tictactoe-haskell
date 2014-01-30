@@ -166,6 +166,7 @@ generateListOfTreesAndMoves state = map (\(x, y) -> (generateNegamaxTree x, y)) 
         validMoves = generateValidMoves state allPossiblePairs
 
 evaluateMove :: (Int, Int) -> GameState -> Negamax.ExtendedNum Integer
+-- Multiply by -1 because our first move is for our opponent
 evaluateMove (x, y) state = Negamax.Only (-1) * Negamax.evaluate (generateNegamaxTree (playMove (x, y) state)) evalFunc 10
 
 findBestMove :: GameState -> (Int, Int)
@@ -179,11 +180,21 @@ playGameAI Player1Win = putStrLn "Player 1 wins!"
 playGameAI Player2Win = putStrLn "Player 2 wins!"
 playGameAI Tie = putStrLn "There is a tie!"
 playGameAI state@(PlayState {board=board, currentPlayer=player})
-        | player == Player1 = putStrLn (showGameBoard board) >> getInput >>= (\x -> return ((flip playMove) PlayState {board=board, currentPlayer=player} x)) >>= (\y -> return (checkGameOver y)) >>= playGameAI
-        | player == Player2 = putStrLn (showGameBoard board) >>= (\a -> return (findBestMove state)) >>= (\x -> return ((flip playMove) PlayState {board=board, currentPlayer=player} x)) >>= (\y -> return (checkGameOver y)) >>= playGameAI
+        | player == Player1 =
+                getInput >>=
+                (\x -> return ((flip playMove) state x)) >>=
+                (\y@PlayState {board=changed, currentPlayer=newPlayer} -> putStrLn (showGameBoard changed) >> return (checkGameOver y)) >>=
+                playGameAI
+        | player == Player2 =
+                return (findBestMove state) >>=
+                (\x -> return ((flip playMove) PlayState {board=board, currentPlayer=player} x)) >>=
+                (\y@PlayState {board=changed, currentPlayer=newPlayer} -> putStrLn (showGameBoard changed) >> return (checkGameOver y)) >>=
+                playGameAI
 
 main :: IO ()
-main = playGameAI startingState
+main = do
+        (putStrLn . showGameBoard) (board startingState)
+        playGameAI startingState
 
 nearlyWinningBoard1 :: GameBoard
 nearlyWinningBoard1 =
