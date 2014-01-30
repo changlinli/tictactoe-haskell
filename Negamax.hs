@@ -2,11 +2,12 @@
 
 module Negamax
 (
-        ExtendedNum (..)
+        ExtendedNum (..),
+        NegamaxTree (..),
+        evaluate
 ) where
 
 data ExtendedNum a = Only a | NegInf | PosInf deriving (Eq, Show)
-data NegamaxTree a state = EmptyTree | Node a state [NegamaxTree a state]
 
 instance Num (ExtendedNum Integer) where
         Only a + Only b = Only (a + b)
@@ -56,19 +57,20 @@ instance Functor ExtendedNum where
         fmap f NegInf = NegInf
         fmap f PosInf = PosInf
 
-singleton :: a -> state -> NegamaxTree a state
-singleton x state = Node x state [ EmptyTree ]
+data NegamaxTree state = EmptyTree | Node state [NegamaxTree state] deriving Show
+
+instance Functor NegamaxTree where
+        fmap f (Node a []) = Node (f a) []
+        fmap f (Node a xs) = Node (f a) (map (fmap f) xs)
+        fmap f EmptyTree = EmptyTree
 
 extendedNum2Num :: (Num a) => ExtendedNum a -> a
 extendedNum2Num NegInf = error "Things went wrong!"
 extendedNum2Num PosInf = error "Things went wrong!"
 extendedNum2Num (Only x) = x
 
-evaluateState :: (state -> ExtendedNum Integer) -> state -> ExtendedNum Integer
-evaluateState f state = f state
-
-evaluateNode :: (state -> ExtendedNum Integer)
-evaluateNode state = Only 0
-
-evaluateTree :: NegamaxTree a state -> state
-evaluateTree (Node a state []) = state
+evaluate :: NegamaxTree state -> (state -> ExtendedNum Integer) -> Int -> ExtendedNum Integer
+evaluate (Node state [] ) evalFunc _ = evalFunc state
+evaluate (Node state _ ) evalFunc 0 = evalFunc state
+evaluate (Node state xs) evalFunc depth = Only (-1) * minimum (map (evaluateOutOfOrder evalFunc (depth - 1)) xs) where
+        evaluateOutOfOrder = \x y z -> evaluate z x y
