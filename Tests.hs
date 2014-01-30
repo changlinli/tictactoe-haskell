@@ -1,5 +1,7 @@
+{-# OPTIONS_GHC -F -pgmF htfpp #-}
 {-# LANGUAGE FlexibleInstances #-}
 
+import Test.Framework
 import Data.Char
 import Test.QuickCheck
 import Negamax
@@ -11,3 +13,5 @@ instance Arbitrary (ExtendedNum Integer) where
 
 prop_AbsSignum :: ExtendedNum Integer -> Bool
 prop_AbsSignum x = abs x * signum x == x
+
+main = htfMain htf_thisModulesTests

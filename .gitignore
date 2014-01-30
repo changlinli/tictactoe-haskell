@@ -2,3 +2,6 @@
 *.hi
 *.o
 game
+.hsenv
+dist
+Setup.hs

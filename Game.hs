@@ -44,12 +44,12 @@ playMove _ Tie = error "The game is already over (there was a tie!)"
 playMove (a, b) (PlayState board player)
         | isValidMove (a, b) board = PlayState { board=newBoard, currentPlayer=nextPlayer player }
         | otherwise = error "Invalid Move!"
-        where 
+        where
                 newBoard = updateBoard board (a, b) (Just player)
 
 -- TODO: Make diagonals more general
 getDiagonals :: GameBoard -> [[GameBoardUnit]]
-getDiagonals 
+getDiagonals
         [[ x1, _ , x3],
         [_, y1 , _],
         [z1, _ , z3]] = [[x1, y1, z3], [x3, y1, z1]]
@@ -83,7 +83,7 @@ checkGameOver (PlayState board player)
         | otherwise = PlayState {board=board, currentPlayer=player}
 
 checkFull :: GameBoard -> Bool
-checkFull [row] 
+checkFull [row]
         | Nothing `elem` row = False
         | otherwise = True
 checkFull (x:xs)
@@ -111,7 +111,7 @@ showGameBoard :: GameBoard -> String
 showGameBoard
         [[a0, a1, a2],
         [b0, b1, b2],
-        [c0, c1, c2]] = 
+        [c0, c1, c2]] =
         show a0 ++ "|" ++ show a1 ++ "|" ++ show a2 ++ "\n" ++
         show b0 ++ "|" ++ show b1 ++ "|" ++ show b2 ++ "\n" ++
         show c0 ++ "|" ++ show c1 ++ "|" ++ show c2 ++ "\n"
