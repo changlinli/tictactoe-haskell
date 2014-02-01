@@ -148,7 +148,7 @@ enumPair :: (Int, Int) -> (Int, Int) -> [(Int, Int)]
 enumPair (a0, b0) (a1, b1) = [a0 .. a1] >>= \x -> [b0 .. b1] >>= \y -> return (x, y)
 
 allPossiblePairs :: [(Int, Int)]
-allPossiblePairs = enumPair (0, 0) (2, 2)
+allPossiblePairs = enumPair (0, 0) (boardSize - 1, boardSize - 1)
 
 generateValidMoves :: GameState -> [(Int, Int)] -> [(Int, Int)]
 generateValidMoves (PlayState board player) xs = filter (flip isValidMove board) xs
