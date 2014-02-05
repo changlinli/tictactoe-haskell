@@ -135,14 +135,17 @@ playGame PlayState {board=board, currentPlayer=player} = do
 getInput :: IO (Int, Int)
 getInput = putStrLn "Enter a move!" >>= (\x -> fmap read getLine)
 
-evalFunc :: GameState -> Negamax.ExtendedNum Integer
-evalFunc state@(PlayState {board=board, currentPlayer=player})
+evalFunc2 :: GameState -> Negamax.ExtendedNum Integer
+evalFunc2 state@(PlayState {board=board, currentPlayer=player})
         | player == Player1 && checkGameOver state == Player1Win = Negamax.PosInf
         | player == Player2 && checkGameOver state == Player2Win = Negamax.PosInf
         | player == Player1 && checkGameOver state == Player2Win = Negamax.NegInf
         | player == Player2 && checkGameOver state == Player1Win = Negamax.NegInf
         | checkGameOver state == Tie = Negamax.Only 0
         | otherwise = Negamax.Only 0
+
+evalFunc1 :: GameState -> Negamax.ExtendedNum Integer
+evalFunc1 = ((*) (-1)) . evalFunc2
 
 enumPair :: (Int, Int) -> (Int, Int) -> [(Int, Int)]
 enumPair (a0, b0) (a1, b1) = [a0 .. a1] >>= \x -> [b0 .. b1] >>= \y -> return (x, y)
@@ -167,7 +170,7 @@ generateListOfTreesAndMoves state = map (\(x, y) -> (generateNegamaxTree x, y)) 
 
 evaluateMove :: (Int, Int) -> GameState -> Negamax.ExtendedNum Integer
 -- Multiply by -1 because our first move is for our opponent
-evaluateMove (x, y) state = Negamax.Only (-1) * Negamax.evaluate (generateNegamaxTree (playMove (x, y) state)) evalFunc 10
+evaluateMove (x, y) state = Negamax.Only (-1) * Negamax.evaluate (generateNegamaxTree (playMove (x, y) state)) evalFunc2 10
 
 findBestMove :: GameState -> (Int, Int)
 findBestMove state = foldl1 biggerOne moveList where
@@ -175,26 +178,53 @@ findBestMove state = foldl1 biggerOne moveList where
         biggerOne acc newMove = if evaluateMove newMove state > evaluateMove acc state then newMove else acc
         moveList = generateValidMoves state allPossiblePairs
 
-playGameAI :: GameState -> IO ()
-playGameAI Player1Win = putStrLn "Player 1 wins!"
-playGameAI Player2Win = putStrLn "Player 2 wins!"
-playGameAI Tie = putStrLn "There is a tie!"
-playGameAI state@(PlayState {board=board, currentPlayer=player})
+playGameAI :: Int -> GameState -> IO ()
+-- TODO: Refactor and compress this code
+playGameAI _ Player1Win = putStrLn "Player 1 wins!"
+playGameAI _ Player2Win = putStrLn "Player 2 wins!"
+playGameAI _ Tie = putStrLn "There is a tie!"
+playGameAI 1 state@(PlayState {board=board, currentPlayer=player})
         | player == Player1 =
                 getInput >>=
                 (\x -> return ((flip playMove) state x)) >>=
                 (\y@PlayState {board=changed, currentPlayer=newPlayer} -> putStrLn (showGameBoard changed) >> return (checkGameOver y)) >>=
-                playGameAI
+                playGameAI 1
         | player == Player2 =
                 return (findBestMove state) >>=
                 (\x -> return ((flip playMove) PlayState {board=board, currentPlayer=player} x)) >>=
                 (\y@PlayState {board=changed, currentPlayer=newPlayer} -> putStrLn (showGameBoard changed) >> return (checkGameOver y)) >>=
-                playGameAI
+                playGameAI 1
+playGameAI 2 state@(PlayState {board=board, currentPlayer=player})
+        | player == Player2 =
+                getInput >>=
+                (\x -> return ((flip playMove) state x)) >>=
+                (\y@PlayState {board=changed, currentPlayer=newPlayer} -> putStrLn (showGameBoard changed) >> return (checkGameOver y)) >>=
+                playGameAI 2
+        | player == Player1 =
+                return (findBestMove state) >>=
+                (\x -> return ((flip playMove) PlayState {board=board, currentPlayer=player} x)) >>=
+                (\y@PlayState {board=changed, currentPlayer=newPlayer} -> putStrLn (showGameBoard changed) >> return (checkGameOver y)) >>=
+                playGameAI 2
+
+playGameAI 3 state@(PlayState {board=board, currentPlayer=player}) =
+        return (findBestMove state) >>=
+        (\x -> return ((flip playMove) PlayState {board=board, currentPlayer=player} x)) >>=
+        (\y@PlayState {board=changed, currentPlayer=newPlayer} -> putStrLn (showGameBoard changed) >> return (checkGameOver y)) >>=
+        playGameAI 3
+
+selectGameType :: Int -> (GameState -> IO ())
+selectGameType 0 = playGame
+selectGameType 1 = playGameAI 1
+selectGameType 2 = playGameAI 2
+selectGameType 3 = playGameAI 3
 
 main :: IO ()
 main = do
+        putStrLn "Please enter 0 for human vs. human, 1 for human (player 1) vs. AI (player 2), 2 for AI (player 1) vs human (player 2), and 3 for AI vs AI"
+        stringGameType <- getLine
+        let gameType = read stringGameType :: Int
         (putStrLn . showGameBoard) (board startingState)
-        playGameAI startingState
+        (selectGameType gameType) startingState
 
 nearlyWinningBoard1 :: GameBoard
 nearlyWinningBoard1 =
