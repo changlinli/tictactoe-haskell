@@ -1,11 +1,14 @@
-{-# OPTIONS_GHC -F -pgmF htfpp #-}
 {-# LANGUAGE FlexibleInstances #-}
 
-import Test.Framework
+import Test.Framework (defaultMain, testGroup)
+import Test.Framework.Providers.HUnit
+import Test.Framework.Providers.QuickCheck2 (testProperty)
+
 import Data.Char
 import Test.QuickCheck
 import Test.HUnit
 import Negamax
+import Tictactoe
 
 instance Arbitrary (ExtendedNum Integer) where
         arbitrary = oneof [integerGen, infGen] where
@@ -15,4 +18,64 @@ instance Arbitrary (ExtendedNum Integer) where
 prop_AbsSignum :: ExtendedNum Integer -> Bool
 prop_AbsSignum x = abs x * signum x == x
 
-main = htfMain htf_thisModulesTests
+tests =
+        [
+        testGroup "Test Group 1"
+                [
+                        testProperty "Test abs and signum relationship" prop_AbsSignum,
+                        testCase "Test player 1 finds winning move" test_1,
+                        testCase "Test player 2 finds winning move" test_2,
+                        testCase "Test player2 finds move to block player 1 win" test_3
+                ]
+        ]
+
+test_1 = findBestMove nearlyWinningState1 @?= (2, 0)
+
+test_2 = findBestMove nearlyWinningState2 @?= (0, 1)
+
+test_3 = findBestMove nearlyLosingState2 @?= (2, 2)
+
+nearlyWinningBoard1 :: GameBoard
+nearlyWinningBoard1 =
+        [
+                [Just Player1, Just Player1, Nothing],
+                [Just Player2, Just Player2, Nothing],
+                [Just Player1, Just Player2, Just Player1]
+        ]
+
+nearlyWinningState1 :: GameState
+nearlyWinningState1 = PlayState nearlyWinningBoard1 Player1
+
+nearlyWinningBoard2 :: GameBoard
+nearlyWinningBoard2 =
+        [
+                [Just Player2, Nothing, Nothing],
+                [Nothing, Just Player1, Nothing],
+                [Just Player2, Just Player1, Just Player1]
+        ]
+
+nearlyWinningState2 :: GameState
+nearlyWinningState2 = PlayState nearlyWinningBoard2 Player2
+
+nearlyLosingBoard2 :: GameBoard
+nearlyLosingBoard2 =
+        [
+                [Just Player1, Nothing, Nothing],
+                [Nothing,Just Player1, Nothing],
+                [Just Player2, Nothing, Nothing]
+        ]
+
+nearlyLosingState2 :: GameState
+nearlyLosingState2 = PlayState nearlyLosingBoard2 Player2
+
+winningBoard :: GameBoard
+winningBoard =
+        [
+                [Just Player1, Just Player1, Just Player1],
+                [Just Player2, Just Player2, Just Player1],
+                [Just Player1, Just Player2, Just Player1]
+        ]
+
+winningState = PlayState winningBoard Player1
+
+main = defaultMain tests
