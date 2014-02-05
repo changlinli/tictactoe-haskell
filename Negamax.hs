@@ -17,7 +17,7 @@ instance Num (ExtendedNum Integer) where
         Only a + PosInf = PosInf
         PosInf + Only a = PosInf
 
-        x - y = ((signum x) * x) + ((signum y) * y)
+        x - y = x + Only (-1) * y
 
         Only a * Only b = Only (a * b)
         Only a * PosInf
