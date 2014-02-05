@@ -20,12 +20,16 @@ prop_AbsSignum x = abs x * signum x == x
 
 tests =
         [
-        testGroup "Test Group 1"
+        testGroup "Negamax Tests"
                 [
-                        testProperty "Test abs and signum relationship" prop_AbsSignum,
-                        testCase "Test player 1 finds winning move" test_1,
-                        testCase "Test player 2 finds winning move" test_2,
-                        testCase "Test player2 finds move to block player 1 win" test_3
+                        testProperty "abs and signum satisfies law specified in Num" prop_AbsSignum
+                ]
+        , testGroup "TicTacToe Tests"
+                [
+                        testCase "Player 1 finds winning move" test_1,
+                        testCase "Player 2 finds winning move" test_2,
+                        testCase "Player 2 finds move to block player 1 win" test_3,
+                        testCase "Player 1 finds move to block player 2 win" test_4
                 ]
         ]
 
@@ -34,6 +38,8 @@ test_1 = findBestMove nearlyWinningState1 @?= (2, 0)
 test_2 = findBestMove nearlyWinningState2 @?= (0, 1)
 
 test_3 = findBestMove nearlyLosingState2 @?= (2, 2)
+
+test_4 = findBestMove nearlyLosingState1 @?= (2, 1)
 
 nearlyWinningBoard1 :: GameBoard
 nearlyWinningBoard1 =
@@ -75,6 +81,16 @@ winningBoard =
                 [Just Player2, Just Player2, Just Player1],
                 [Just Player1, Just Player2, Just Player1]
         ]
+
+nearlyLosingBoard1 :: GameBoard
+nearlyLosingBoard1 =
+        [
+                [Just Player1, Nothing, Nothing],
+                [Just Player2, Just Player2, Nothing],
+                [Just Player1, Nothing, Nothing]
+        ]
+
+nearlyLosingState1 = PlayState nearlyLosingBoard1 Player1
 
 winningState = PlayState winningBoard Player1
 
