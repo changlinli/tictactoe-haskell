@@ -178,39 +178,23 @@ findBestMove state = foldl1 biggerOne moveList where
         biggerOne acc newMove = if evaluateMove newMove state > evaluateMove acc state then newMove else acc
         moveList = generateValidMoves state allPossiblePairs
 
+showMoveResult :: (Int, Int) -> GameState -> IO GameState
+showMoveResult move state@(PlayState {board=board, currentPlayer=player}) =
+        return ((flip playMove) state move) >>=
+        (\y@PlayState {board=changed, currentPlayer=newPlayer} -> putStrLn (showGameBoard changed) >> return (checkGameOver y))
+
 playGameAI :: Int -> GameState -> IO ()
--- TODO: Refactor and compress this code
 playGameAI _ Player1Win = putStrLn "Player 1 wins!"
 playGameAI _ Player2Win = putStrLn "Player 2 wins!"
 playGameAI _ Tie = putStrLn "There is a tie!"
 playGameAI 1 state@(PlayState {board=board, currentPlayer=player})
-        | player == Player1 =
-                getInput >>=
-                (\x -> return ((flip playMove) state x)) >>=
-                (\y@PlayState {board=changed, currentPlayer=newPlayer} -> putStrLn (showGameBoard changed) >> return (checkGameOver y)) >>=
-                playGameAI 1
-        | player == Player2 =
-                return (findBestMove state) >>=
-                (\x -> return ((flip playMove) PlayState {board=board, currentPlayer=player} x)) >>=
-                (\y@PlayState {board=changed, currentPlayer=newPlayer} -> putStrLn (showGameBoard changed) >> return (checkGameOver y)) >>=
-                playGameAI 1
+        | player == Player1 = getInput >>= (\x -> showMoveResult x state) >>= playGameAI 1
+        | player == Player2 = return (findBestMove state) >>= (\x -> showMoveResult x state) >>= playGameAI 1
 playGameAI 2 state@(PlayState {board=board, currentPlayer=player})
-        | player == Player2 =
-                getInput >>=
-                (\x -> return ((flip playMove) state x)) >>=
-                (\y@PlayState {board=changed, currentPlayer=newPlayer} -> putStrLn (showGameBoard changed) >> return (checkGameOver y)) >>=
-                playGameAI 2
-        | player == Player1 =
-                return (findBestMove state) >>=
-                (\x -> return ((flip playMove) PlayState {board=board, currentPlayer=player} x)) >>=
-                (\y@PlayState {board=changed, currentPlayer=newPlayer} -> putStrLn (showGameBoard changed) >> return (checkGameOver y)) >>=
-                playGameAI 2
-
+        | player == Player2 = getInput >>= (\x -> showMoveResult x state) >>= playGameAI 2
+        | player == Player1 = return (findBestMove state) >>= (\x -> showMoveResult x state) >>= playGameAI 2
 playGameAI 3 state@(PlayState {board=board, currentPlayer=player}) =
-        return (findBestMove state) >>=
-        (\x -> return ((flip playMove) PlayState {board=board, currentPlayer=player} x)) >>=
-        (\y@PlayState {board=changed, currentPlayer=newPlayer} -> putStrLn (showGameBoard changed) >> return (checkGameOver y)) >>=
-        playGameAI 3
+        return (findBestMove state) >>= (\x -> showMoveResult x state) >>= playGameAI 3
 
 selectGameType :: Int -> (GameState -> IO ())
 selectGameType 0 = playGame
