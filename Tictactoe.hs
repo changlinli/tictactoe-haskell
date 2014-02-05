@@ -173,9 +173,6 @@ findBestMove state = foldl1 biggerOne moveList where
 
 -- Everything below is tainted by IO!
 
-counter :: Int -> IO ()
-counter x = print x >>= (\y -> counter (x + 1))
-
 playGame :: GameState -> IO ()
 playGame Player1Win = putStrLn "Player 1 wins!"
 playGame Player2Win = putStrLn "Player 2 wins!"
