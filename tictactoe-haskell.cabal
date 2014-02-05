@@ -52,6 +52,8 @@ executable tictactoe-haskell
   -- Other library packages from which modules are imported.
   build-depends:       base ==4.6.*, containers ==0.5.*
 
+  ghc-options:        -O2
+
 Test-Suite test-foo
   type:               exitcode-stdio-1.0
   main-is:            Tests.hs
