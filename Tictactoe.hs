@@ -128,24 +128,6 @@ showGameBoard
         show b0 ++ "|" ++ show b1 ++ "|" ++ show b2 ++ "\n" ++
         show c0 ++ "|" ++ show c1 ++ "|" ++ show c2 ++ "\n"
 
-counter :: Int -> IO ()
-counter x = print x >>= (\y -> counter (x + 1))
-
-playGame :: GameState -> IO ()
-playGame Player1Win = putStrLn "Player 1 wins!"
-playGame Player2Win = putStrLn "Player 2 wins!"
-playGame Tie = putStrLn "There is a tie!"
-{-playGame PlayState {board=board, currentPlayer=player} = putStrLn (showGameBoard board) >> getInput >>= (\x -> return ((flip playMove) PlayState {board=board, currentPlayer=player} x)) >>= (\y -> return (checkGameOver y)) >>= playGame-}
-playGame PlayState {board=board, currentPlayer=player} = do
-        putStrLn (showGameBoard board)
-        x <- getInput
-        y <- return ((flip playMove) PlayState {board=board, currentPlayer=player} x)
-        z <- return (checkGameOver y)
-        playGame z
-
-getInput :: IO (Int, Int)
-getInput = putStrLn "Enter a move!" >>= (\x -> fmap read getLine)
-
 evalFunc2 :: GameState -> Negamax.ExtendedNum Integer
 evalFunc2 state@(PlayState {board=board, currentPlayer=player})
         | player == Player1 && checkGameOver state == Player1Win = Negamax.PosInf
@@ -188,6 +170,26 @@ findBestMove state = foldl1 biggerOne moveList where
         biggerOne :: (Int, Int) -> (Int, Int) -> (Int, Int)
         biggerOne acc newMove = if evaluateMove newMove state > evaluateMove acc state then newMove else acc
         moveList = generateValidMoves state allPossiblePairs
+
+-- Everything below is tainted by IO!
+
+counter :: Int -> IO ()
+counter x = print x >>= (\y -> counter (x + 1))
+
+playGame :: GameState -> IO ()
+playGame Player1Win = putStrLn "Player 1 wins!"
+playGame Player2Win = putStrLn "Player 2 wins!"
+playGame Tie = putStrLn "There is a tie!"
+{-playGame PlayState {board=board, currentPlayer=player} = putStrLn (showGameBoard board) >> getInput >>= (\x -> return ((flip playMove) PlayState {board=board, currentPlayer=player} x)) >>= (\y -> return (checkGameOver y)) >>= playGame-}
+playGame PlayState {board=board, currentPlayer=player} = do
+        putStrLn (showGameBoard board)
+        x <- getInput
+        y <- return ((flip playMove) PlayState {board=board, currentPlayer=player} x)
+        z <- return (checkGameOver y)
+        playGame z
+
+getInput :: IO (Int, Int)
+getInput = putStrLn "Enter a move!" >>= (\x -> fmap read getLine)
 
 showMoveResult :: (Int, Int) -> GameState -> IO GameState
 showMoveResult move state@(PlayState {board=board, currentPlayer=player}) =
