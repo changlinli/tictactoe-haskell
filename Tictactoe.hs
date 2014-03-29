@@ -128,17 +128,14 @@ showGameBoard
         show b0 ++ "|" ++ show b1 ++ "|" ++ show b2 ++ "\n" ++
         show c0 ++ "|" ++ show c1 ++ "|" ++ show c2 ++ "\n"
 
-evalFunc2 :: GameState -> Negamax.ExtendedNum Integer
-evalFunc2 state@(PlayState {board=board, currentPlayer=player})
+evalFunc :: GameState -> Negamax.ExtendedNum Integer
+evalFunc state@(PlayState {board=board, currentPlayer=player})
         | player == Player1 && checkGameOver state == Player1Win = Negamax.PosInf
         | player == Player2 && checkGameOver state == Player2Win = Negamax.PosInf
         | player == Player1 && checkGameOver state == Player2Win = Negamax.NegInf
         | player == Player2 && checkGameOver state == Player1Win = Negamax.NegInf
         | checkGameOver state == Tie = Negamax.Only 0
         | otherwise = Negamax.Only 0
-
-evalFunc1 :: GameState -> Negamax.ExtendedNum Integer
-evalFunc1 = ((*) (-1)) . evalFunc2
 
 enumPair :: (Int, Int) -> (Int, Int) -> [(Int, Int)]
 enumPair (a0, b0) (a1, b1) = [a0 .. a1] >>= \x -> [b0 .. b1] >>= \y -> return (x, y)
@@ -163,7 +160,7 @@ generateListOfTreesAndMoves state = map (\(x, y) -> (generateNegamaxTree x, y)) 
 
 evaluateMove :: (Int, Int) -> GameState -> Negamax.ExtendedNum Integer
 -- Multiply by -1 because our first move is for our opponent
-evaluateMove (x, y) state = Negamax.Only (-1) * Negamax.evaluate (generateNegamaxTree (playMove (x, y) state)) evalFunc2 10
+evaluateMove (x, y) state = Negamax.Only (-1) * Negamax.evaluate (generateNegamaxTree (playMove (x, y) state)) evalFunc 10
 
 findBestMove :: GameState -> (Int, Int)
 findBestMove state = foldl1 biggerOne moveList where
