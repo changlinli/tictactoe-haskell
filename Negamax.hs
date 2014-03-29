@@ -60,12 +60,26 @@ instance Functor ExtendedNum where
         fmap f NegInf = NegInf
         fmap f PosInf = PosInf
 
-data NegamaxTree state = EmptyTree | Node state [NegamaxTree state] deriving Show
+data NegamaxTree state = EmptyTree | Node state [NegamaxTree state]
 
 instance Functor NegamaxTree where
         fmap f (Node a []) = Node (f a) []
         fmap f (Node a xs) = Node (f a) (map (fmap f) xs)
         fmap f EmptyTree = EmptyTree
+
+instance (Show a) => Show (NegamaxTree a) where
+        show = flip showHelperTree 0
+
+indentNTimes :: Int -> String -> String
+indentNTimes n xs = iterate ((++) "  ") xs !! n
+
+showHelperTree :: (Show a) => NegamaxTree a -> Int -> String
+showHelperTree EmptyTree n = indentNTimes n "EmptyTree"
+showHelperTree tree@(Node state xs) n
+        | null xs = indentNTimes n baseString
+        | otherwise = indentNTimes n baseString ++ foldl (++) "" restOfTree
+        where baseString = "| " ++ show state ++ "\n"
+              restOfTree = map (flip showHelperTree (n + 1)) xs
 
 extendedNum2Num :: (Num a) => ExtendedNum a -> a
 extendedNum2Num NegInf = error "Things went wrong!"
