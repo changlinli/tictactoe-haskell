@@ -5,3 +5,4 @@ game
 .hsenv
 dist
 Setup.hs
+*.prof
