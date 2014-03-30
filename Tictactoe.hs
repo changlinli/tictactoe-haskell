@@ -158,14 +158,16 @@ generateListOfTreesAndMoves state = map (\(x, y) -> (generateNegamaxTree x, y)) 
         validMovesTwoCopies = zip validMoves validMoves
         validMoves = generateValidMoves state allPossiblePairs
 
-evaluateMove :: (Int, Int) -> GameState -> Negamax.ExtendedNum Integer
--- Multiply by -1 because our first move is for our opponent
-evaluateMove (x, y) state = Negamax.Only (-1) * Negamax.evaluate (generateNegamaxTree (playMove (x, y) state)) evalFunc 10
+evaluateState :: GameState -> Negamax.ExtendedNum Integer
+evaluateState state = Negamax.evaluate (generateNegamaxTree state) evalFunc 10
 
 findBestMove :: GameState -> (Int, Int)
 findBestMove state = foldl1 biggerOne moveList where
         biggerOne :: (Int, Int) -> (Int, Int) -> (Int, Int)
-        biggerOne acc newMove = if evaluateMove newMove state > evaluateMove acc state then newMove else acc
+        -- Note that we choose the least favorable state because all the
+        -- states are calculated from the perspective of the opposing
+        -- player
+        biggerOne acc newMove = if evaluateState (playMove newMove state) < evaluateState (playMove acc state) then newMove else acc
         moveList = generateValidMoves state allPossiblePairs
 
 -- Everything below is tainted by IO!
