@@ -8,6 +8,7 @@ import qualified Data.Sequence as DS
 import qualified Data.Foldable as DF
 import qualified Data.List as DL
 import qualified Negamax
+import qualified Control.Applicative as CA
 
 boardSize = 3
 data Players = Player1 | Player2 deriving (Eq, Show)
@@ -74,14 +75,13 @@ checkRows board = checkThreeInARow (getRows board)
 checkCols :: GameBoard -> Maybe Players
 checkCols board = checkThreeInARow (getCols board)
 
+findWinner :: GameBoard -> Maybe Players
+findWinner board = checkDiagonals board CA.<|> checkRows board CA.<|> checkCols board
+
 checkGameOver :: GameState -> GameState
 checkGameOver (PlayState board player)
-        | checkDiagonals board == Just Player1 = Player1Win
-        | checkDiagonals board == Just Player2 = Player2Win
-        | checkRows board == Just Player1 = Player1Win
-        | checkRows board == Just Player2 = Player2Win
-        | checkCols board == Just Player1 = Player1Win
-        | checkCols board == Just Player2 = Player2Win
+        | findWinner board == Just Player1 = Player1Win
+        | findWinner board == Just Player2 = Player2Win
         | checkFull board = Tie
         | otherwise = PlayState {board=board, currentPlayer=player}
 
