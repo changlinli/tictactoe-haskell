@@ -167,7 +167,9 @@ findBestMove state = foldl1 biggerOne moveList where
         -- Note that we choose the least favorable state because all the
         -- states are calculated from the perspective of the opposing
         -- player
-        biggerOne acc newMove = if evaluateState (playMove newMove state) < evaluateState (playMove acc state) then newMove else acc
+        biggerOne acc newMove = if evaluateState (playMove newMove state) < evaluateState (playMove acc state)
+                                   then newMove
+                                   else acc
         moveList = generateValidMoves state allPossiblePairs
 
 -- Everything below is tainted by IO!

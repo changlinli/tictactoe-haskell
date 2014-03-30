@@ -74,6 +74,7 @@ indentNTimes :: Int -> String -> String
 indentNTimes n xs = iterate ((++) "  ") xs !! n
 
 showHelperTree :: (Show a) => NegamaxTree a -> Int -> String
+-- Helper function for show function
 showHelperTree EmptyTree n = indentNTimes n "EmptyTree"
 showHelperTree tree@(Node state xs) n
         | null xs = indentNTimes n baseString
