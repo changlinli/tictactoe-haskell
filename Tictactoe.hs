@@ -51,7 +51,7 @@ playMove (a, b) (PlayState board player)
                 newBoard = updateBoard board (a, b) (Just player)
 
 -- TODO: Make diagonals more general
-getDiagonals :: GameBoard -> [[GameBoardUnit]]
+getDiagonals :: [[a]] -> [[a]]
 getDiagonals
         [[ x1, _ , x3],
         [_, y1 , _],
@@ -59,13 +59,13 @@ getDiagonals
 
 -- Yes I know, this does nothing, but it might if GameBoard changes from
 -- just being a list of lists
-getRows :: GameBoard -> [[GameBoardUnit]]
+getRows :: [[a]] -> [[a]]
 getRows board = board
 
-getCols :: GameBoard -> [[GameBoardUnit]]
+getCols :: [[a]] -> [[a]]
 getCols board = transposeBoard board
 
-transposeBoard :: GameBoard -> GameBoard
+transposeBoard :: [[a]] -> [[a]]
 transposeBoard board = DL.transpose board
 
 checkRows :: GameBoard -> Maybe Players
