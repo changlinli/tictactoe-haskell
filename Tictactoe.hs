@@ -2,16 +2,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverlappingInstances #-}
 
-module Tictactoe
-(
-        startingState,
-        selectGameType,
-        showGameBoard,
-        GameState (..),
-        GameBoard (..),
-        Players (..),
-        findBestMove
-) where
+module Tictactoe where
 
 import qualified Data.Sequence as DS
 import qualified Data.Foldable as DF
