@@ -101,11 +101,12 @@ updateList (x:xs) newItem index
 updateBoard :: GameBoard -> (Int, Int) -> GameBoardUnit -> GameBoard
 updateBoard oldBoard (x, y) value = updateList oldBoard (updateList (oldBoard !! y) value x) y
 
-checkThreeInARow :: [[GameBoardUnit]] -> Maybe Players
-checkThreeInARow listOfRows
-        | [Just Player1, Just Player1, Just Player1] `elem` listOfRows = Just Player1
-        | [Just Player2, Just Player2, Just Player2] `elem` listOfRows = Just Player2
-        | otherwise = Nothing
+checkThreeInARow :: (Eq a) => [[ Maybe a ]] -> Maybe a
+checkThreeInARow listOfRows = True `DL.elemIndex` (map sameEntries listOfRows) >>= (\n -> head (listOfRows !! n))
+
+sameEntries :: (Eq a) => [a] -> Bool
+sameEntries [] = True
+sameEntries (x:xs) = foldl (\a b -> a && b == x) True xs
 
 checkDiagonals :: GameBoard -> Maybe Players
 checkDiagonals board = checkThreeInARow (getDiagonals board)
