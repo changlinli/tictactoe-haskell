@@ -4,6 +4,7 @@ all:
 	cabal install
 
 clean:
-	rm *.hi
-	rm *.o
-	rm Game
+	-rm *.hi
+	-rm *.o
+	-rm Game
+	-rm SuperGame
