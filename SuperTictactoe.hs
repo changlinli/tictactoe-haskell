@@ -14,13 +14,13 @@ superBoardSize = 3
 -- we would also include which player has won certain subboards of our
 -- super board so we don't have to recalculate every time
 type SuperGameBoard = [[ Tic.GameBoard ]]
-data SuperGameState = SuperPlayState { currentSuperBoard :: SuperGameBoard, currentSuperPlayer :: Tic.Players } | Player1WinSuper | Player2WinSuper | TieSuper deriving (Show, Eq)
+data SuperGameState = SuperPlayState { currentMiniBoard :: (Int, Int), currentSuperBoard :: SuperGameBoard, currentSuperPlayer :: Tic.Players } | Player1WinSuper | Player2WinSuper | TieSuper deriving (Show, Eq)
 
 startingSuperBoard :: SuperGameBoard
 startingSuperBoard = [[Tic.startingBoard, Tic.startingBoard], [Tic.startingBoard, Tic.startingBoard], [Tic.startingBoard, Tic.startingBoard]]
 
 startingSuperState :: SuperGameState
-startingSuperState = SuperPlayState { currentSuperBoard=startingSuperBoard, currentSuperPlayer=Tic.Player1 }
+startingSuperState = SuperPlayState { currentMiniBoard=(1, 1), currentSuperBoard=startingSuperBoard, currentSuperPlayer=Tic.Player1 }
 
 nextPlayer :: Tic.Players -> Tic.Players
 nextPlayer Tic.Player1 = Tic.Player2
@@ -59,8 +59,8 @@ findSuperWinner :: SuperGameBoard -> Maybe Tic.Players
 findSuperWinner superBoard = checkSuperDiagonals superBoard CA.<|> checkSuperRows superBoard CA.<|> checkSuperCols superBoard
 
 checkSuperGameOver :: SuperGameState -> SuperGameState
-checkSuperGameOver (SuperPlayState superBoard superPlayer)
+checkSuperGameOver currentState@(SuperPlayState miniBoard superBoard superPlayer)
         | findSuperWinner superBoard == Just Tic.Player1 = Player1WinSuper
         | findSuperWinner superBoard == Just Tic.Player2 = Player2WinSuper
         | checkSuperFull superBoard = TieSuper
-        | otherwise = SuperPlayState {currentSuperBoard = superBoard, currentSuperPlayer = superPlayer}
+        | otherwise = currentState
