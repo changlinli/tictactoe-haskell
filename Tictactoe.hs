@@ -9,6 +9,7 @@ import qualified Data.Foldable as DF
 import qualified Data.List as DL
 import qualified Negamax
 import qualified Control.Applicative as CA
+import qualified Data.Maybe as DM
 
 boardSize = 3
 data Players = Player1 | Player2 deriving (Eq, Show)
@@ -170,16 +171,23 @@ playGame :: GameState -> IO ()
 playGame Player1Win = putStrLn "Player 1 wins!"
 playGame Player2Win = putStrLn "Player 2 wins!"
 playGame Tie = putStrLn "There is a tie!"
-{-playGame PlayState {board=board, currentPlayer=player} = putStrLn (showGameBoard board) >> getInput >>= (\x -> return ((flip playMove) PlayState {board=board, currentPlayer=player} x)) >>= (\y -> return (checkGameOver y)) >>= playGame-}
 playGame PlayState {board=board, currentPlayer=player} = do
         putStrLn (showGameBoard board)
-        x <- getInput
-        y <- return ((flip playMove) PlayState {board=board, currentPlayer=player} x)
+        x <- getInputWithRetry
+        y <- return (playMove x (PlayState {board=board, currentPlayer=player}))
         z <- return (checkGameOver y)
         playGame z
 
-getInput :: IO (Int, Int)
-getInput = putStrLn "Enter a move!" >>= (\x -> fmap read getLine)
+maybeRead :: (Read a) => String -> Maybe a
+maybeRead = fmap fst . DM.listToMaybe . reads
+
+getInput :: IO (Maybe (Int, Int))
+getInput = putStrLn "Enter a move!" >>= (\x -> fmap maybeRead getLine)
+
+getInputWithRetry :: IO (Int, Int)
+getInputWithRetry = getInput >>= (\x -> if DM.isNothing x
+                       then putStrLn "Error in parsing input, try again" >> getInputWithRetry
+                       else return (DM.fromJust x))
 
 showMoveResult :: (Int, Int) -> GameState -> IO GameState
 showMoveResult move state@(PlayState {board=board, currentPlayer=player}) =
@@ -191,10 +199,10 @@ playGameAI _ Player1Win = putStrLn "Player 1 wins!"
 playGameAI _ Player2Win = putStrLn "Player 2 wins!"
 playGameAI _ Tie = putStrLn "There is a tie!"
 playGameAI 1 state@(PlayState {board=board, currentPlayer=player})
-        | player == Player1 = getInput >>= (\x -> showMoveResult x state) >>= playGameAI 1
+        | player == Player1 = getInputWithRetry >>= (\x -> showMoveResult x state) >>= playGameAI 1
         | player == Player2 = return (findBestMove state) >>= (\x -> showMoveResult x state) >>= playGameAI 1
 playGameAI 2 state@(PlayState {board=board, currentPlayer=player})
-        | player == Player2 = getInput >>= (\x -> showMoveResult x state) >>= playGameAI 2
+        | player == Player2 = getInputWithRetry >>= (\x -> showMoveResult x state) >>= playGameAI 2
         | player == Player1 = return (findBestMove state) >>= (\x -> showMoveResult x state) >>= playGameAI 2
 playGameAI 3 state@(PlayState {board=board, currentPlayer=player}) =
         return (findBestMove state) >>= (\x -> showMoveResult x state) >>= playGameAI 3

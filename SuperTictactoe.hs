@@ -104,7 +104,7 @@ playGame TieSuper = putStrLn "There is a Tie!"
 playGame currentState@(SuperPlayState {currentMiniBoard=miniBoardCoord, currentSuperBoard=superBoard, currentPlayer=player}) =
         putStrLn (showSuperGameBoard superBoard) >>
         putStrLn ("Current board is " ++ (show miniBoardCoord)) >>=
-        (\x -> Tic.getInput) >>=
+        (\x -> Tic.getInputWithRetry) >>=
         (\y -> return (playSuperMove y currentState)) >>=
         (\z -> return (checkSuperGameOver z)) >>=
         playGame
