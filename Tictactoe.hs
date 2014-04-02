@@ -31,7 +31,7 @@ nextPlayer Player1 = Player2
 nextPlayer Player2 = Player1
 
 isValidMove :: (Int, Int) -> GameBoard -> Bool
-isValidMove (a, b) board = if (board !! b) !! a == Nothing && a < boardSize && b < boardSize
+isValidMove (a, b) board = if a < boardSize && b < boardSize && (board !! b) !! a == Nothing
            then True
            else False
 
@@ -167,6 +167,20 @@ findBestMove state = foldl1 biggerOne moveList where
 
 -- Everything below is tainted by IO!
 
+retry :: a -> (a -> Bool) -> (a -> IO b) -> IO a -> IO b
+retry input condition moveAction redoAction = if condition input
+                                           then moveAction input
+                                           else redoAction >>= (\a -> retry a condition moveAction redoAction)
+
+playMoveRobust :: (Int, Int) -> GameState -> IO GameState
+playMoveRobust moveCoord currentState@(PlayState currentBoard currentPlayer) =
+        retry
+                moveCoord
+                (\x -> isValidMove x currentBoard)
+                (playMoveIO currentState)
+                (putStrLn "Invaild move!" >> getInputWithRetry)
+        where playMoveIO = \x y -> return $ playMove y x
+
 playGame :: GameState -> IO ()
 playGame Player1Win = putStrLn "Player 1 wins!"
 playGame Player2Win = putStrLn "Player 2 wins!"
@@ -174,7 +188,7 @@ playGame Tie = putStrLn "There is a tie!"
 playGame PlayState {board=board, currentPlayer=player} = do
         putStrLn (showGameBoard board)
         x <- getInputWithRetry
-        y <- return (playMove x (PlayState {board=board, currentPlayer=player}))
+        y <- playMoveRobust x (PlayState {board=board, currentPlayer=player})
         z <- return (checkGameOver y)
         playGame z
 
@@ -191,7 +205,7 @@ getInputWithRetry = getInput >>= (\x -> if DM.isNothing x
 
 showMoveResult :: (Int, Int) -> GameState -> IO GameState
 showMoveResult move state@(PlayState {board=board, currentPlayer=player}) =
-        return ((flip playMove) state move) >>=
+        playMoveRobust move state >>=
         (\y@PlayState {board=changed, currentPlayer=newPlayer} -> putStrLn (showGameBoard changed) >> return (checkGameOver y))
 
 playGameAI :: Int -> GameState -> IO ()

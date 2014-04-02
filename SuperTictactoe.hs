@@ -8,6 +8,7 @@ import qualified Negamax as Negamax
 import qualified Tictactoe as Tic
 import qualified Data.List as DL
 import qualified Control.Applicative as CA
+import qualified Data.Maybe as DM
 
 boardSize = Tic.boardSize
 superBoardSize = 3
@@ -61,9 +62,11 @@ checkSuperGameOver currentState@(SuperPlayState miniBoard superBoard superPlayer
         | checkSuperFull superBoard = TieSuper
         | otherwise = currentState
 
+
 isValidSuperMove :: (Int, Int) -> SuperGameState -> Bool
-isValidSuperMove (a, b) (SuperPlayState miniBoardCoord superBoard superPlayer) = Tic.isValidMove (a, b) actualBoard
+isValidSuperMove (a, b) (SuperPlayState miniBoardCoord superBoard superPlayer) = Tic.isValidMove (a, b) actualBoard && sizeCond
         where actualBoard = getMiniBoard miniBoardCoord superBoard
+              sizeCond = a < superBoardSize && b < superBoardSize
 
 getMiniBoard :: (Int, Int) -> SuperGameBoard -> Tic.GameBoard
 getMiniBoard (a, b) superBoard = (superBoard !! b) !! a
@@ -80,9 +83,7 @@ playSuperMove :: (Int, Int) -> SuperGameState -> SuperGameState
 playSuperMove _ Player1WinSuper = error "The game is already over (Player 1 Won!)"
 playSuperMove _ Player2WinSuper = error "The game is already over (Player 2 Won!)"
 playSuperMove _ TieSuper = error "The game is already over (there was a tie!)"
-playSuperMove (a, b) currentState@(SuperPlayState miniBoardCoord superBoard player)
-        | isValidSuperMove (a, b) currentState = updateSuperState currentState (a, b)
-        | otherwise = error "Invalid Move!"
+playSuperMove (a, b) currentState@(SuperPlayState miniBoardCoord superBoard player) = updateSuperState currentState (a, b)
 
 (-+-) :: String -> String -> String
 -- Laterally combine strings, e.g. "1\na\n" and "2\nb\n" to "12\nab\n"
@@ -97,6 +98,15 @@ showSuperGameBoard
         Tic.showGameBoard b0 -+- "{}\n{}\n{}\n" -+- Tic.showGameBoard b1 -+- "{}\n{}\n{}\n" -+- Tic.showGameBoard b2 ++ "\n" ++
         Tic.showGameBoard c0 -+- "{}\n{}\n{}\n" -+- Tic.showGameBoard c1 -+- "{}\n{}\n{}\n" -+- Tic.showGameBoard c2
 
+playSuperMoveWithRetry :: (Int, Int) -> SuperGameState -> IO (Int, Int) -> IO SuperGameState
+playSuperMoveWithRetry moveCoord currentState redoAction =
+        Tic.retry
+                moveCoord
+                (\x -> isValidSuperMove x currentState)
+                (playSuperMoveIO currentState)
+                (putStrLn "Invalid move!" >> Tic.getInputWithRetry)
+        where playSuperMoveIO = \x y -> return $ playSuperMove y x
+
 playGame :: SuperGameState -> IO ()
 playGame Player1WinSuper = putStrLn "Player 1 Wins!"
 playGame Player2WinSuper = putStrLn "Player 2 Wins!"
@@ -105,6 +115,6 @@ playGame currentState@(SuperPlayState {currentMiniBoard=miniBoardCoord, currentS
         putStrLn (showSuperGameBoard superBoard) >>
         putStrLn ("Current board is " ++ (show miniBoardCoord)) >>=
         (\x -> Tic.getInputWithRetry) >>=
-        (\y -> return (playSuperMove y currentState)) >>=
+        (\y -> playSuperMoveWithRetry y currentState Tic.getInputWithRetry) >>=
         (\z -> return (checkSuperGameOver z)) >>=
         playGame
