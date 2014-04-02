@@ -142,7 +142,7 @@ generateValidMoves (PlayState board player) xs = filter (flip isValidMove board)
 generateNegamaxTree :: GameState -> Negamax.NegamaxTree GameState
 generateNegamaxTree state@(PlayState board player)
         | checkGameOver state /= state = Negamax.Node state []
-        | otherwise = Negamax.Node (checkGameOver state) listOfNodes
+        | otherwise = Negamax.Node state listOfNodes
                 where listOfNodes = map (generateNegamaxTree . (flip playMove state)) validMoves
                       validMoves = generateValidMoves state allPossiblePairs
 
