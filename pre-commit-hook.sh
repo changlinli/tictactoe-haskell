@@ -50,7 +50,15 @@ then
 fi
 
 cabal configure --enable-tests
+if [ $? -ne 0 ]
+then
+	exit 1
+fi
 cabal build
+if [ $? -ne 0 ]
+then
+	exit 1
+fi
 cabal test
 if [ $? -ne 0 ]
 then
