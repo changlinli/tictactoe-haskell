@@ -108,7 +108,7 @@ showSuperGameBoard
         Tic.showGameBoard c0 -+- "{}\n{}\n{}\n" -+- Tic.showGameBoard c1 -+- "{}\n{}\n{}\n" -+- Tic.showGameBoard c2
 
 maximumDepth :: Int
-maximumDepth = 5
+maximumDepth = 4
 
 allPossiblePairs :: [(Int, Int)]
 allPossiblePairs = Tic.enumPair (0, 0) (superBoardSize - 1, superBoardSize - 1)
@@ -155,7 +155,8 @@ playGameAI state@SuperPlayState{currentMiniBoard=miniBoardCoord, currentSuperBoa
         | player == Tic.Player2 = do
                 putStrLn (showSuperGameBoard superBoard)
                 putStrLn ("Current board is " ++ (show miniBoardCoord))
+                putStrLn "AI is playing now"
                 x <- return (findBestMove state)
-                y <- playSuperMoveWithRetry x state Tic.getInputWithRetry
+                y <- return (playSuperMove x state)
                 z <- return (checkSuperGameOver y)
                 playGameAI z

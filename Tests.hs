@@ -35,7 +35,10 @@ tests =
         , testGroup "SuperTicTacToe Tests"
                 [
                         testCase "Game recognizes Player 1 victory when all top rows are won and are the same mini board" test_5,
-                        testCase "Game recognizes Player 1 victory when all top rows are won, but are different mini boards" test_6
+                        testCase "Game recognizes Player 1 victory when all top rows are won, but are different mini boards" test_6,
+                        testCase "findBestMove AI as player 1 finds winning move" test_7,
+                        testCase "findBestMove AI as player 2 finds winning move" test_8,
+                        testCase "Game recognizes Player 2 victory when left column is won, but are different mini boards" test_9
                 ]
         ]
 
@@ -50,6 +53,12 @@ test_4 = Tic.findBestMove nearlyLosingState1 @?= (2, 1)
 test_5 = Sup.checkSuperGameOver winningSuperStateAllMiniBoardsSame @?= Sup.Player1WinSuper
 
 test_6 = Sup.checkSuperGameOver winningSuperStateDifferentMiniBoards @?= Sup.Player1WinSuper
+
+test_7 = Sup.findBestMove nearlyWinningSuperState1 @?= (2, 0)
+
+test_8 = Sup.findBestMove nearlyWinningSuperState2 @?= (0, 1)
+
+test_9 = Sup.checkSuperGameOver winningSuperState2 @?= Sup.Player2WinSuper
 
 nearlyWinningBoard1 :: GameBoard
 nearlyWinningBoard1 =
@@ -84,8 +93,8 @@ nearlyLosingBoard2 =
 nearlyLosingState2 :: GameState
 nearlyLosingState2 = PlayState nearlyLosingBoard2 Player2
 
-winningBoard :: GameBoard
-winningBoard =
+winningBoard1 :: GameBoard
+winningBoard1 =
         [
                 [Just Player1, Just Player1, Just Player1],
                 [Just Player2, Just Player2, Just Player1],
@@ -102,12 +111,10 @@ nearlyLosingBoard1 =
 
 nearlyLosingState1 = PlayState nearlyLosingBoard1 Player1
 
-winningState = PlayState winningBoard Player1
-
 winningSuperBoardAllMiniBoardsSame :: Sup.SuperGameBoard
 winningSuperBoardAllMiniBoardsSame =
         [
-                [winningBoard, winningBoard, winningBoard],
+                [winningBoard1, winningBoard1, winningBoard1],
                 [startingBoard, startingBoard, startingBoard],
                 [startingBoard, startingBoard, startingBoard]
         ]
@@ -126,12 +133,60 @@ winningBoard2 =
 winningSuperBoardDifferentMiniBoards :: Sup.SuperGameBoard
 winningSuperBoardDifferentMiniBoards =
         [
-                [winningBoard, winningBoard, winningBoard2],
+                [winningBoard1, winningBoard1, winningBoard2],
                 [startingBoard, startingBoard, startingBoard],
                 [startingBoard, startingBoard, startingBoard]
         ]
 
 winningSuperStateDifferentMiniBoards :: Sup.SuperGameState
 winningSuperStateDifferentMiniBoards = Sup.SuperPlayState (2, 2) winningSuperBoardDifferentMiniBoards Player1
+
+nearlyWinningSuperBoard1 :: Sup.SuperGameBoard
+nearlyWinningSuperBoard1 =
+        [
+                [nearlyWinningBoard1, nearlyWinningBoard1, nearlyWinningBoard1],
+                [winningBoard1, winningBoard1, nearlyWinningBoard1],
+                [nearlyWinningBoard1, nearlyWinningBoard1, nearlyWinningBoard1]
+        ]
+
+nearlyWinningSuperState1 :: Sup.SuperGameState
+nearlyWinningSuperState1 = Sup.SuperPlayState (2, 1) nearlyWinningSuperBoard1 Player1
+
+nearlyWinningSuperBoard2 :: Sup.SuperGameBoard
+nearlyWinningSuperBoard2 =
+        [
+                [winningMiniBoard2b, nearlyWinningBoard2, nearlyWinningBoard2],
+                [winningMiniBoard2b, nearlyWinningBoard2, nearlyWinningBoard2],
+                [nearlyWinningBoard2, nearlyWinningBoard2, winningBoard1]
+        ]
+
+nearlyWinningSuperState2 :: Sup.SuperGameState
+nearlyWinningSuperState2 = Sup.SuperPlayState (0, 2) nearlyWinningSuperBoard2 Player2
+
+winningMiniBoard2a :: GameBoard
+winningMiniBoard2a =
+        [
+                [Just Player2, Nothing, Nothing],
+                [Just Player2, Just Player1, Nothing],
+                [Just Player2, Just Player1, Just Player1]
+        ]
+
+winningMiniBoard2b :: GameBoard
+winningMiniBoard2b =
+        [
+                [Just Player2, Just Player1, Just Player1],
+                [Nothing, Just Player2, Nothing],
+                [Nothing, Nothing, Just Player2]
+        ]
+
+winningSuperBoard2 :: Sup.SuperGameBoard
+winningSuperBoard2 =
+        [
+                [winningMiniBoard2b, nearlyWinningBoard2, nearlyWinningBoard2],
+                [winningMiniBoard2b, nearlyWinningBoard2, nearlyWinningBoard2],
+                [winningMiniBoard2a, nearlyWinningBoard2, winningBoard1]
+        ]
+
+winningSuperState2 = Sup.SuperPlayState (0, 2) winningSuperBoard2 Player2
 
 main = defaultMain tests
