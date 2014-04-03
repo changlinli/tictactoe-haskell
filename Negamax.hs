@@ -1,11 +1,13 @@
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Negamax
 (
         ExtendedNum (..),
         NegamaxTree (..),
         evaluate,
-        generateNegamaxTree
+        generateNegamaxTree,
+        findBestMove
 ) where
 
 
@@ -101,3 +103,24 @@ generateNegamaxTree state moveFunc checkGameOverFunc generatePossibleMovesFunc
                 where listOfNodes = map (argsModifiedGenerateNegamaxTree moveFunc checkGameOverFunc generatePossibleMovesFunc . (flip moveFunc state)) validMoves
                       argsModifiedGenerateNegamaxTree = \a b c d -> generateNegamaxTree d a b c
                       validMoves = generatePossibleMovesFunc state
+
+findBestMove :: forall move state.
+        state ->
+        (move -> state -> state) ->
+        (state -> Bool) ->
+        (state -> [move]) ->
+        (state -> ExtendedNum Integer) ->
+        Int ->
+        move
+findBestMove state moveFunc checkGameOverFunc generatePossibleMovesFunc evalFunc depth = foldl1 biggerOne moveList where
+        biggerOne :: move -> move -> move
+        -- Note that we choose the least favorable state because all the
+        -- states are calculated from the perspective of the opposing
+        -- player
+        biggerOne acc newMove = if newMoveScore < accScore
+                                   then newMove
+                                   else acc
+                where newMoveScore = evaluate (generateNegamaxTree (moveFunc newMove state) moveFunc checkGameOverFunc generatePossibleMovesFunc) evalFunc depth
+                      accScore = evaluate (generateNegamaxTree (moveFunc acc state) moveFunc checkGameOverFunc generatePossibleMovesFunc) evalFunc depth
+        moveList :: [move]
+        moveList = generatePossibleMovesFunc state

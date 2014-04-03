@@ -144,27 +144,11 @@ allPossiblePairs = enumPair (0, 0) (boardSize - 1, boardSize - 1)
 generateValidMoves :: GameState -> [(Int, Int)] -> [(Int, Int)]
 generateValidMoves (PlayState board player) xs = filter (flip isValidMove board) xs
 
-generateNegamaxTree :: GameState -> Negamax.NegamaxTree GameState
-generateNegamaxTree state@(PlayState board player) = Negamax.generateNegamaxTree state playMove isGameOver (flip generateValidMoves allPossiblePairs)
-
-generateListOfTreesAndMoves :: GameState -> [(Negamax.NegamaxTree GameState, (Int, Int))]
-generateListOfTreesAndMoves state = map (\(x, y) -> (generateNegamaxTree x, y)) (map (\(a, b) -> (playMove a state, b)) validMovesTwoCopies) where
-        validMovesTwoCopies = zip validMoves validMoves
-        validMoves = generateValidMoves state allPossiblePairs
-
-evaluateState :: GameState -> Negamax.ExtendedNum Integer
-evaluateState state = Negamax.evaluate (generateNegamaxTree state) evalFunc 10
+maximumDepth :: Int
+maximumDepth = 10
 
 findBestMove :: GameState -> (Int, Int)
-findBestMove state = foldl1 biggerOne moveList where
-        biggerOne :: (Int, Int) -> (Int, Int) -> (Int, Int)
-        -- Note that we choose the least favorable state because all the
-        -- states are calculated from the perspective of the opposing
-        -- player
-        biggerOne acc newMove = if evaluateState (playMove newMove state) < evaluateState (playMove acc state)
-                                   then newMove
-                                   else acc
-        moveList = generateValidMoves state allPossiblePairs
+findBestMove state = Negamax.findBestMove state playMove isGameOver (flip generateValidMoves allPossiblePairs) evalFunc maximumDepth
 
 -- Everything below is tainted by IO!
 

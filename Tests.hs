@@ -8,7 +8,7 @@ import Data.Char
 import Test.QuickCheck
 import Test.HUnit
 import Negamax
-import Tictactoe
+import Tictactoe as Tic
 import qualified SuperTictactoe as Sup
 
 instance Arbitrary (ExtendedNum Integer) where
@@ -39,13 +39,13 @@ tests =
                 ]
         ]
 
-test_1 = findBestMove nearlyWinningState1 @?= (2, 0)
+test_1 = Tic.findBestMove nearlyWinningState1 @?= (2, 0)
 
-test_2 = findBestMove nearlyWinningState2 @?= (0, 1)
+test_2 = Tic.findBestMove nearlyWinningState2 @?= (0, 1)
 
-test_3 = findBestMove nearlyLosingState2 @?= (2, 2)
+test_3 = Tic.findBestMove nearlyLosingState2 @?= (2, 2)
 
-test_4 = findBestMove nearlyLosingState1 @?= (2, 1)
+test_4 = Tic.findBestMove nearlyLosingState1 @?= (2, 1)
 
 test_5 = Sup.checkSuperGameOver winningSuperStateAllMiniBoardsSame @?= Sup.Player1WinSuper
 
