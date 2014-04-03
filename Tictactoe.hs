@@ -86,6 +86,11 @@ checkGameOver (PlayState board player)
         | checkFull board = Tie
         | otherwise = PlayState {board=board, currentPlayer=player}
 
+isGameOver :: GameState -> Bool
+isGameOver state = if checkGameOver state /= state
+                      then True
+                      else False
+
 checkFull :: GameBoard -> Bool
 checkFull [row]
         | Nothing `elem` row = False
@@ -140,11 +145,7 @@ generateValidMoves :: GameState -> [(Int, Int)] -> [(Int, Int)]
 generateValidMoves (PlayState board player) xs = filter (flip isValidMove board) xs
 
 generateNegamaxTree :: GameState -> Negamax.NegamaxTree GameState
-generateNegamaxTree state@(PlayState board player)
-        | checkGameOver state /= state = Negamax.Node state []
-        | otherwise = Negamax.Node state listOfNodes
-                where listOfNodes = map (generateNegamaxTree . (flip playMove state)) validMoves
-                      validMoves = generateValidMoves state allPossiblePairs
+generateNegamaxTree state@(PlayState board player) = Negamax.generateNegamaxTree state playMove isGameOver (flip generateValidMoves allPossiblePairs)
 
 generateListOfTreesAndMoves :: GameState -> [(Negamax.NegamaxTree GameState, (Int, Int))]
 generateListOfTreesAndMoves state = map (\(x, y) -> (generateNegamaxTree x, y)) (map (\(a, b) -> (playMove a state, b)) validMovesTwoCopies) where

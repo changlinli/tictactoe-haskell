@@ -4,7 +4,8 @@ module Negamax
 (
         ExtendedNum (..),
         NegamaxTree (..),
-        evaluate
+        evaluate,
+        generateNegamaxTree
 ) where
 
 
@@ -60,7 +61,7 @@ instance Functor ExtendedNum where
         fmap f NegInf = NegInf
         fmap f PosInf = PosInf
 
-data NegamaxTree state = EmptyTree | Node state [NegamaxTree state]
+data NegamaxTree state = EmptyTree | Node state [NegamaxTree state] deriving (Eq)
 
 instance Functor NegamaxTree where
         fmap f (Node a []) = Node (f a) []
@@ -92,3 +93,11 @@ evaluate (Node state [] ) evalFunc _ = evalFunc state
 evaluate (Node state _ ) evalFunc 0 = evalFunc state
 evaluate (Node state xs) evalFunc depth = Only (-1) * minimum (map (evaluateOutOfOrder evalFunc (depth - 1)) xs) where
         evaluateOutOfOrder = \x y z -> evaluate z x y
+
+generateNegamaxTree :: state -> (move -> state -> state)  -> (state -> Bool) -> (state -> [move]) -> NegamaxTree state
+generateNegamaxTree state moveFunc checkGameOverFunc generatePossibleMovesFunc
+        | checkGameOverFunc state = Node state []
+        | otherwise = Node state listOfNodes
+                where listOfNodes = map (argsModifiedGenerateNegamaxTree moveFunc checkGameOverFunc generatePossibleMovesFunc . (flip moveFunc state)) validMoves
+                      argsModifiedGenerateNegamaxTree = \a b c d -> generateNegamaxTree d a b c
+                      validMoves = generatePossibleMovesFunc state

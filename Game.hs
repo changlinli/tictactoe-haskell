@@ -7,6 +7,9 @@ import qualified Data.Foldable as DF
 import qualified Data.List as DL
 import qualified Negamax
 import qualified Tictactoe as Tic
+import qualified Options.Applicative as OA
+
+data PossibleFlags = Flags{superGame :: Bool, useAI :: Bool, player1Or2AI :: Integer}
 
 main :: IO ()
 main = do
