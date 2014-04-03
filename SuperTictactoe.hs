@@ -33,7 +33,12 @@ getGameBoardUnit :: ((Int, Int), (Int, Int)) -> SuperGameBoard -> Tic.GameBoardU
 getGameBoardUnit ((a, b), (c, d)) board = (((board !! b) !! a) !! d) !! c
 
 evalFunc :: SuperGameState -> Negamax.ExtendedNum Integer
-evalFunc = undefined
+evalFunc SuperPlayState{currentMiniBoard=miniBoardCoord, currentSuperBoard=superBoard, currentPlayer=player} =
+        foldl ( \x y -> x + winnerScore y) 0 (fmap (flip getMiniBoard superBoard) Tic.allPossiblePairs) where
+        winnerScore miniBoard = case Tic.findWinner miniBoard of
+                Just player -> 1
+                x | x == Just (Tic.nextPlayer player) -> (-1)
+                _ -> 0
 
 checkSuperFull :: SuperGameBoard -> Bool
 checkSuperFull superBoard = and (map foldRow superBoard)
@@ -62,6 +67,10 @@ checkSuperGameOver currentState@(SuperPlayState miniBoard superBoard superPlayer
         | checkSuperFull superBoard = TieSuper
         | otherwise = currentState
 
+isSuperGameOver :: SuperGameState -> Bool
+isSuperGameOver state = if checkSuperGameOver state /= state
+                           then True
+                           else False
 
 isValidSuperMove :: (Int, Int) -> SuperGameState -> Bool
 isValidSuperMove (a, b) (SuperPlayState miniBoardCoord superBoard superPlayer) = Tic.isValidMove (a, b) actualBoard && sizeCond
@@ -98,6 +107,18 @@ showSuperGameBoard
         Tic.showGameBoard b0 -+- "{}\n{}\n{}\n" -+- Tic.showGameBoard b1 -+- "{}\n{}\n{}\n" -+- Tic.showGameBoard b2 ++ "\n" ++
         Tic.showGameBoard c0 -+- "{}\n{}\n{}\n" -+- Tic.showGameBoard c1 -+- "{}\n{}\n{}\n" -+- Tic.showGameBoard c2
 
+maximumDepth :: Int
+maximumDepth = 5
+
+allPossiblePairs :: [(Int, Int)]
+allPossiblePairs = Tic.enumPair (0, 0) (superBoardSize - 1, superBoardSize - 1)
+
+generateValidSuperMoves :: SuperGameState -> [(Int, Int)]
+generateValidSuperMoves (SuperPlayState miniBoardCoord superBoard player) = filter (flip Tic.isValidMove (getMiniBoard miniBoardCoord superBoard)) allPossiblePairs
+
+findBestMove :: SuperGameState -> (Int, Int)
+findBestMove state = Negamax.findBestMove state playSuperMove isSuperGameOver generateValidSuperMoves evalFunc maximumDepth
+
 playSuperMoveWithRetry :: (Int, Int) -> SuperGameState -> IO (Int, Int) -> IO SuperGameState
 playSuperMoveWithRetry moveCoord currentState redoAction =
         Tic.retry
@@ -118,3 +139,23 @@ playGame currentState@(SuperPlayState {currentMiniBoard=miniBoardCoord, currentS
         (\y -> playSuperMoveWithRetry y currentState Tic.getInputWithRetry) >>=
         (\z -> return (checkSuperGameOver z)) >>=
         playGame
+
+playGameAI :: SuperGameState -> IO ()
+playGameAI Player1WinSuper = putStrLn "Player 1 Wins!"
+playGameAI Player2WinSuper = putStrLn "Player 2 Wins!"
+playGameAI TieSuper = putStrLn "There is a tie!"
+playGameAI state@SuperPlayState{currentMiniBoard=miniBoardCoord, currentSuperBoard=superBoard, currentPlayer=player}
+        | player == Tic.Player1 = do
+                putStrLn (showSuperGameBoard superBoard)
+                putStrLn ("Current board is " ++ (show miniBoardCoord))
+                x <- Tic.getInputWithRetry
+                y <- playSuperMoveWithRetry x state Tic.getInputWithRetry
+                z <- return (checkSuperGameOver y)
+                playGameAI z
+        | player == Tic.Player2 = do
+                putStrLn (showSuperGameBoard superBoard)
+                putStrLn ("Current board is " ++ (show miniBoardCoord))
+                x <- return (findBestMove state)
+                y <- playSuperMoveWithRetry x state Tic.getInputWithRetry
+                z <- return (checkSuperGameOver y)
+                playGameAI z
