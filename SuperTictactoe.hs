@@ -8,9 +8,11 @@ import qualified Negamax as Negamax
 import qualified Tictactoe as Tic
 import qualified Data.List as DL
 import qualified Control.Applicative as CA
-import qualified Data.Maybe as DM
 
+boardSize :: Int
 boardSize = Tic.boardSize
+
+superBoardSize :: Int
 superBoardSize = 3
 
 -- Note that this is hugely inefficient to just have the gameboard. Ideally
@@ -33,10 +35,15 @@ getGameBoardUnit :: ((Int, Int), (Int, Int)) -> SuperGameBoard -> Tic.GameBoardU
 getGameBoardUnit ((a, b), (c, d)) board = (((board !! b) !! a) !! d) !! c
 
 evalFunc :: SuperGameState -> Negamax.ExtendedNum Integer
-evalFunc SuperPlayState{currentMiniBoard=miniBoardCoord, currentSuperBoard=superBoard, currentPlayer=player} =
-        foldl ( \x y -> x + winnerScore y) 0 (fmap (flip getMiniBoard superBoard) Tic.allPossiblePairs) where
+evalFunc state@SuperPlayState{currentSuperBoard=superBoard, currentPlayer=player}
+        | player == Tic.Player1 && checkSuperGameOver state == Player1WinSuper = Negamax.PosInf
+        | player == Tic.Player2 && checkSuperGameOver state == Player2WinSuper = Negamax.PosInf
+        | player == Tic.Player1 && checkSuperGameOver state == Player2WinSuper = Negamax.NegInf
+        | player == Tic.Player2 && checkSuperGameOver state == Player1WinSuper = Negamax.NegInf
+        | checkSuperGameOver state == TieSuper = Negamax.Only 0
+        | otherwise = foldl ( \x y -> x + winnerScore y) 0 (fmap (flip getMiniBoard superBoard) Tic.allPossiblePairs) where
         winnerScore miniBoard = case Tic.findWinner miniBoard of
-                Just player -> 1
+                x | x == Just player -> 1
                 x | x == Just (Tic.nextPlayer player) -> (-1)
                 _ -> 0
 
@@ -61,11 +68,12 @@ findSuperWinner :: SuperGameBoard -> Maybe Tic.Players
 findSuperWinner superBoard = checkSuperDiagonals superBoard CA.<|> checkSuperRows superBoard CA.<|> checkSuperCols superBoard
 
 checkSuperGameOver :: SuperGameState -> SuperGameState
-checkSuperGameOver currentState@(SuperPlayState miniBoard superBoard superPlayer)
+checkSuperGameOver currentState
         | findSuperWinner superBoard == Just Tic.Player1 = Player1WinSuper
         | findSuperWinner superBoard == Just Tic.Player2 = Player2WinSuper
         | checkSuperFull superBoard = TieSuper
         | otherwise = currentState
+        where superBoard = currentSuperBoard currentState
 
 isSuperGameOver :: SuperGameState -> Bool
 isSuperGameOver state = if checkSuperGameOver state /= state
@@ -73,7 +81,7 @@ isSuperGameOver state = if checkSuperGameOver state /= state
                            else False
 
 isValidSuperMove :: (Int, Int) -> SuperGameState -> Bool
-isValidSuperMove (a, b) (SuperPlayState miniBoardCoord superBoard superPlayer) = Tic.isValidMove (a, b) actualBoard && sizeCond
+isValidSuperMove (a, b) SuperPlayState{currentMiniBoard=miniBoardCoord, currentSuperBoard=superBoard} = Tic.isValidMove (a, b) actualBoard && sizeCond
         where actualBoard = getMiniBoard miniBoardCoord superBoard
               sizeCond = a < superBoardSize && b < superBoardSize
 
@@ -92,7 +100,7 @@ playSuperMove :: (Int, Int) -> SuperGameState -> SuperGameState
 playSuperMove _ Player1WinSuper = error "The game is already over (Player 1 Won!)"
 playSuperMove _ Player2WinSuper = error "The game is already over (Player 2 Won!)"
 playSuperMove _ TieSuper = error "The game is already over (there was a tie!)"
-playSuperMove (a, b) currentState@(SuperPlayState miniBoardCoord superBoard player) = updateSuperState currentState (a, b)
+playSuperMove (a, b) currentState = updateSuperState currentState (a, b)
 
 (-+-) :: String -> String -> String
 -- Laterally combine strings, e.g. "1\na\n" and "2\nb\n" to "12\nab\n"
@@ -114,13 +122,15 @@ allPossiblePairs :: [(Int, Int)]
 allPossiblePairs = Tic.enumPair (0, 0) (superBoardSize - 1, superBoardSize - 1)
 
 generateValidSuperMoves :: SuperGameState -> [(Int, Int)]
-generateValidSuperMoves (SuperPlayState miniBoardCoord superBoard player) = filter (flip Tic.isValidMove (getMiniBoard miniBoardCoord superBoard)) allPossiblePairs
+generateValidSuperMoves superState = filter (flip Tic.isValidMove (getMiniBoard miniBoardCoord superBoard)) allPossiblePairs
+        where miniBoardCoord = currentMiniBoard superState
+              superBoard = currentSuperBoard superState
 
 findBestMove :: SuperGameState -> (Int, Int)
 findBestMove state = Negamax.findBestMove state playSuperMove isSuperGameOver generateValidSuperMoves evalFunc maximumDepth
 
-playSuperMoveWithRetry :: (Int, Int) -> SuperGameState -> IO (Int, Int) -> IO SuperGameState
-playSuperMoveWithRetry moveCoord currentState redoAction =
+playSuperMoveWithRetry :: (Int, Int) -> SuperGameState -> IO SuperGameState
+playSuperMoveWithRetry moveCoord currentState =
         Tic.retry
                 moveCoord
                 (\x -> isValidSuperMove x currentState)
@@ -132,11 +142,11 @@ playGame :: SuperGameState -> IO ()
 playGame Player1WinSuper = putStrLn "Player 1 Wins!"
 playGame Player2WinSuper = putStrLn "Player 2 Wins!"
 playGame TieSuper = putStrLn "There is a Tie!"
-playGame currentState@(SuperPlayState {currentMiniBoard=miniBoardCoord, currentSuperBoard=superBoard, currentPlayer=player}) =
+playGame currentState@(SuperPlayState {currentMiniBoard=miniBoardCoord, currentSuperBoard=superBoard}) =
         putStrLn (showSuperGameBoard superBoard) >>
-        putStrLn ("Current board is " ++ (show miniBoardCoord)) >>=
-        (\x -> Tic.getInputWithRetry) >>=
-        (\y -> playSuperMoveWithRetry y currentState Tic.getInputWithRetry) >>=
+        putStrLn ("Current board is " ++ (show miniBoardCoord)) >>
+        Tic.getInputWithRetry >>=
+        (\y -> playSuperMoveWithRetry y currentState) >>=
         (\z -> return (checkSuperGameOver z)) >>=
         playGame
 
@@ -149,7 +159,7 @@ playGameAI state@SuperPlayState{currentMiniBoard=miniBoardCoord, currentSuperBoa
                 putStrLn (showSuperGameBoard superBoard)
                 putStrLn ("Current board is " ++ (show miniBoardCoord))
                 x <- Tic.getInputWithRetry
-                y <- playSuperMoveWithRetry x state Tic.getInputWithRetry
+                y <- playSuperMoveWithRetry x state
                 z <- return (checkSuperGameOver y)
                 playGameAI z
         | player == Tic.Player2 = do
