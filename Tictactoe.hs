@@ -46,9 +46,7 @@ playMove :: (Int, Int) -> GameState -> GameState
 playMove _ Player1Win = error "The game is already over (Player 1 Won!)"
 playMove _ Player2Win = error "The game is already over (Player 2 Won!)"
 playMove _ Tie = error "The game is already over (there was a tie!)"
-playMove (a, b) (PlayState board player)
-        | isValidMove (a, b) board = PlayState { board=newBoard, currentPlayer=nextPlayer player }
-        | otherwise = error "Invalid Move!"
+playMove (a, b) (PlayState board player)= PlayState { board=newBoard, currentPlayer=nextPlayer player }
         where
                 newBoard = updateBoard board (a, b) (Just player)
 
@@ -112,7 +110,7 @@ checkThreeInARow listOfRows = True `DL.elemIndex` (map sameEntries listOfRows) >
 
 sameEntries :: (Eq a) => [a] -> Bool
 sameEntries [] = True
-sameEntries (x:xs) = foldl (\a b -> a && b == x) True xs
+sameEntries xs = and $ map (== head xs) (tail xs)
 
 checkDiagonals :: GameBoard -> Maybe Players
 checkDiagonals board = checkThreeInARow (getDiagonals board)

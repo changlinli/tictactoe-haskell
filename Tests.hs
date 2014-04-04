@@ -189,4 +189,23 @@ winningSuperBoard2 =
 
 winningSuperState2 = Sup.SuperPlayState (0, 2) winningSuperBoard2 Player2
 
+fullMiniBoardTie :: GameBoard
+fullMiniBoardTie =
+        [
+                [Just Player1, Just Player1, Just Player2],
+                [Just Player2, Just Player2, Just Player1],
+                [Just Player1, Just Player1, Just Player2]
+        ]
+
+fullMiniBoardTieSuperBoard :: Sup.SuperGameBoard
+fullMiniBoardTieSuperBoard =
+        [
+                [fullMiniBoardTie, startingBoard, startingBoard],
+                [startingBoard, startingBoard, startingBoard],
+                [startingBoard, startingBoard, startingBoard]
+        ]
+
+fullMiniBoardTieState :: Sup.SuperGameState
+fullMiniBoardTieState = Sup.SuperPlayState (0, 0) fullMiniBoardTieSuperBoard Player2
+
 main = defaultMain tests
