@@ -30,7 +30,9 @@ tests =
                         testCase "Player 1 finds winning move" test_1,
                         testCase "Player 2 finds winning move" test_2,
                         testCase "Player 2 finds move to block player 1 win" test_3,
-                        testCase "Player 1 finds move to block player 2 win" test_4
+                        testCase "Player 1 finds move to block player 2 win" test_4,
+                        testCase "isValidMove rejects inputs that imply moves with negative index" test_10,
+                        testCase "isValidMove rejects inputs that imply moves with too high of an index" test_11
                 ]
         , testGroup "SuperTicTacToe Tests"
                 [
@@ -38,7 +40,9 @@ tests =
                         testCase "Game recognizes Player 1 victory when all top rows are won, but are different mini boards" test_6,
                         testCase "findBestMove AI as player 1 finds winning move" test_7,
                         testCase "findBestMove AI as player 2 finds winning move" test_8,
-                        testCase "Game recognizes Player 2 victory when left column is won, but are different mini boards" test_9
+                        testCase "Game recognizes Player 2 victory when left column is won, but are different mini boards" test_9,
+                        testCase "isValidMove rejects inputs that imply moves with negative index" test_12,
+                        testCase "isValidMove rejects inputs that imply moves with too high of an index" test_13
                 ]
         ]
 
@@ -59,6 +63,14 @@ test_7 = Sup.findBestMove nearlyWinningSuperState1 @?= (2, 0)
 test_8 = Sup.findBestMove nearlyWinningSuperState2 @?= (0, 1)
 
 test_9 = Sup.checkSuperGameOver winningSuperState2 @?= Sup.Player2WinSuper
+
+test_10 = Tic.isValidMove (-1, 0) Tic.startingBoard || Tic.isValidMove (0, -1) Tic.startingBoard || Tic.isValidMove (-2, -3) Tic.startingBoard @?= False
+
+test_11 = Tic.isValidMove (3, 2) Tic.startingBoard || Tic.isValidMove (3, 2) Tic.startingBoard || Tic.isValidMove (3, 3) Tic.startingBoard @?= False
+
+test_12 = Sup.isValidSuperMove (-1, 0) Sup.startingSuperState || Sup.isValidSuperMove (0, -1 ) Sup.startingSuperState || Sup.isValidSuperMove (-2, -3) Sup.startingSuperState @?= False
+
+test_13 = Sup.isValidSuperMove (3, 2) Sup.startingSuperState || Sup.isValidSuperMove (3, 2) Sup.startingSuperState || Sup.isValidSuperMove (3, 3) Sup.startingSuperState @?= False
 
 nearlyWinningBoard1 :: GameBoard
 nearlyWinningBoard1 =

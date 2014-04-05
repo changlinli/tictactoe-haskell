@@ -31,7 +31,11 @@ nextPlayer Player1 = Player2
 nextPlayer Player2 = Player1
 
 isValidMove :: (Int, Int) -> GameBoard -> Bool
-isValidMove (a, b) board = if a < boardSize && b < boardSize && (board !! b) !! a == Nothing
+isValidMove (a, b) board = if a < boardSize &&
+                              b < boardSize &&
+                              0 <= a &&
+                              0 <= b &&
+                              (board !! b) !! a == Nothing
            then True
            else False
 
