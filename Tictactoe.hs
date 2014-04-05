@@ -161,7 +161,7 @@ playMoveRobust moveCoord currentState@(PlayState currentBoard currentPlayer) =
                 moveCoord
                 (\x -> isValidMove x currentBoard)
                 (playMoveIO currentState)
-                (putStrLn "Invaild move!" >> getInputWithRetry)
+                (putStrLn "Invalid move!" >> getInputWithRetry)
         where playMoveIO = \x y -> return $ playMove y x
 
 playGame :: GameState -> IO ()
