@@ -1,5 +1,5 @@
 Super Tic-tac-toe (and normal Tic-Tac-Toe) in Haskell
-======================
+=====================================================
 
 What it is:
 -----------
@@ -64,3 +64,34 @@ following.
 
 To play against an AI, use the `--useAI` option. To view all the options
 available, run `tictactoe-haskell --help`.
+
+Running Tests
+-------------
+
+This game comes with a suite of tests, in case you think that you can write a
+better or faster AI or otherwise improve the game. To run these tests, it's
+first necessary to install some dependencies which the game itself does not
+need. These can be done simply via
+
+    cabal configure --enable-tests
+    cabal build
+    cabal install --enable-tests
+
+Thereafter, you can either run `make test` or
+
+    cabal configure --enable-tests
+    cabal build
+    cabal test
+
+to test the code (they both do the same thing).
+
+There is also a pre-commit hook which can be used with Git to make sure that
+before every commit, these tests are run and if they fail the commit will not
+go through. It is located at `pre-commit-hook.sh` and a simple
+
+    cp pre-commit-hook.sh .git/hooks/pre-commit-hook
+    chmod +x .git/hooks/pre-commit-hook
+
+should be sufficient to activate the hook. Note that the pre-commit hook is
+based off of Git's default one and so includes the portion which checks for
+trailing whitespace.

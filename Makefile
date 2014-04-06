@@ -8,3 +8,8 @@ clean:
 	-rm *.o
 	-rm Game
 	-rm SuperGame
+
+test:
+	cabal configure --enable-tests
+	cabal build
+	cabal test
