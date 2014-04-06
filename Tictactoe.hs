@@ -165,22 +165,11 @@ playMoveRobust moveCoord currentState@(PlayState currentBoard currentPlayer) =
                 (putStrLn "Invalid move!" >> getInputWithRetry)
         where playMoveIO = \x y -> return $ playMove y x
 
-playGame :: GameState -> IO ()
-playGame Player1Win = putStrLn "Player 1 wins!"
-playGame Player2Win = putStrLn "Player 2 wins!"
-playGame Tie = putStrLn "There is a tie!"
-playGame PlayState {board=board, currentPlayer=player} = do
-        putStrLn (showGameBoard board)
-        x <- getInputWithRetry
-        y <- playMoveRobust x (PlayState {board=board, currentPlayer=player})
-        z <- return (checkGameOver y)
-        playGame z
-
 maybeRead :: (Read a) => String -> Maybe a
 maybeRead = fmap fst . DM.listToMaybe . reads
 
 getInput :: IO (Maybe (Int, Int))
-getInput = putStrLn "Enter a move!" >>= (\x -> fmap maybeRead getLine)
+getInput = putStrLn "Enter a move! Enter in tuple format, e.g. (1, 2)." >>= (\x -> fmap maybeRead getLine)
 
 getInputWithRetry :: IO (Int, Int)
 getInputWithRetry = getInput >>= (\x -> if DM.isNothing x
@@ -196,6 +185,12 @@ playGameAI :: Int -> GameState -> IO ()
 playGameAI _ Player1Win = putStrLn "Player 1 wins!"
 playGameAI _ Player2Win = putStrLn "Player 2 wins!"
 playGameAI _ Tie = putStrLn "There is a tie!"
+playGameAI 0 PlayState {board=board, currentPlayer=player} = do
+        putStrLn (showGameBoard board)
+        x <- getInputWithRetry
+        y <- playMoveRobust x (PlayState {board=board, currentPlayer=player})
+        z <- return (checkGameOver y)
+        playGameAI 0 z
 playGameAI 1 state@(PlayState {board=board, currentPlayer=player})
         | player == Player1 = getInputWithRetry >>= (\x -> showMoveResult x state) >>= playGameAI 1
         | player == Player2 = return (findBestMove state) >>= (\x -> showMoveResult x state) >>= playGameAI 1
@@ -206,7 +201,7 @@ playGameAI 3 state@(PlayState {board=board, currentPlayer=player}) =
         return (findBestMove state) >>= (\x -> showMoveResult x state) >>= playGameAI 3
 
 selectGameType :: Int -> (GameState -> IO ())
-selectGameType 0 = playGame
+selectGameType 0 = playGameAI 0
 selectGameType 1 = playGameAI 1
 selectGameType 2 = playGameAI 2
 selectGameType 3 = playGameAI 3

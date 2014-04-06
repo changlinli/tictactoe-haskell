@@ -150,18 +150,25 @@ playGame currentState@(SuperPlayState {currentMiniBoard=miniBoardCoord, currentS
         (\z -> return (checkSuperGameOver z)) >>=
         playGame
 
-playGameAI :: SuperGameState -> IO ()
-playGameAI Player1WinSuper = putStrLn "Player 1 Wins!"
-playGameAI Player2WinSuper = putStrLn "Player 2 Wins!"
-playGameAI TieSuper = putStrLn "There is a tie!"
-playGameAI state@SuperPlayState{currentMiniBoard=miniBoardCoord, currentSuperBoard=superBoard, currentPlayer=player}
+playGameAI :: Int -> SuperGameState -> IO ()
+playGameAI _ Player1WinSuper = putStrLn "Player 1 Wins!"
+playGameAI _ Player2WinSuper = putStrLn "Player 2 Wins!"
+playGameAI _ TieSuper = putStrLn "There is a tie!"
+playGameAI 0 currentState@(SuperPlayState {currentMiniBoard=miniBoardCoord, currentSuperBoard=superBoard}) =
+        putStrLn (showSuperGameBoard superBoard) >>
+        putStrLn ("Current board is " ++ (show miniBoardCoord)) >>
+        Tic.getInputWithRetry >>=
+        (\y -> playSuperMoveWithRetry y currentState) >>=
+        (\z -> return (checkSuperGameOver z)) >>=
+        playGameAI 0
+playGameAI 1 state@SuperPlayState{currentMiniBoard=miniBoardCoord, currentSuperBoard=superBoard, currentPlayer=player}
         | player == Tic.Player1 = do
                 putStrLn (showSuperGameBoard superBoard)
                 putStrLn ("Current board is " ++ (show miniBoardCoord))
                 x <- Tic.getInputWithRetry
                 y <- playSuperMoveWithRetry x state
                 z <- return (checkSuperGameOver y)
-                playGameAI z
+                playGameAI 1 z
         | player == Tic.Player2 = do
                 putStrLn (showSuperGameBoard superBoard)
                 putStrLn ("Current board is " ++ (show miniBoardCoord))
@@ -169,4 +176,37 @@ playGameAI state@SuperPlayState{currentMiniBoard=miniBoardCoord, currentSuperBoa
                 x <- return (findBestMove state)
                 y <- return (playSuperMove x state)
                 z <- return (checkSuperGameOver y)
-                playGameAI z
+                playGameAI 1 z
+playGameAI 2 state@SuperPlayState{currentMiniBoard=miniBoardCoord, currentSuperBoard=superBoard, currentPlayer=player}
+        | player == Tic.Player2 = do
+                putStrLn (showSuperGameBoard superBoard)
+                putStrLn ("Current board is " ++ (show miniBoardCoord))
+                x <- Tic.getInputWithRetry
+                y <- playSuperMoveWithRetry x state
+                z <- return (checkSuperGameOver y)
+                playGameAI 2 z
+        | player == Tic.Player1 = do
+                putStrLn (showSuperGameBoard superBoard)
+                putStrLn ("Current board is " ++ (show miniBoardCoord))
+                putStrLn "AI is playing now"
+                x <- return (findBestMove state)
+                y <- return (playSuperMove x state)
+                z <- return (checkSuperGameOver y)
+                playGameAI 2 z
+playGameAI 3 state@SuperPlayState{currentMiniBoard=miniBoardCoord, currentSuperBoard=superBoard, currentPlayer=player}
+        | player == Tic.Player1 = do
+                putStrLn (showSuperGameBoard superBoard)
+                putStrLn ("Current board is " ++ (show miniBoardCoord))
+                putStrLn "AI is playing now"
+                x <- return (findBestMove state)
+                y <- return (playSuperMove x state)
+                z <- return (checkSuperGameOver y)
+                playGameAI 3 z
+        | player == Tic.Player2 = do
+                putStrLn (showSuperGameBoard superBoard)
+                putStrLn ("Current board is " ++ (show miniBoardCoord))
+                putStrLn "AI is playing now"
+                x <- return (findBestMove state)
+                y <- return (playSuperMove x state)
+                z <- return (checkSuperGameOver y)
+                playGameAI 3 z
