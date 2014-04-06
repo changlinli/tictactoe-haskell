@@ -4,6 +4,8 @@ import Test.Framework (defaultMain, testGroup)
 import Test.Framework.Providers.HUnit
 import Test.Framework.Providers.QuickCheck2 (testProperty)
 
+import Control.Monad
+
 import Data.Char
 import Test.QuickCheck
 import Test.HUnit
@@ -16,8 +18,30 @@ instance Arbitrary (ExtendedNum Integer) where
                 integerGen = fmap Only (choose (0 :: Integer, 1000000000000000000 :: Integer))
                 infGen = elements [PosInf, NegInf]
 
+instance Arbitrary Tic.Players where
+        arbitrary = elements [Player1, Player2]
+
+newtype NewGameBoard = NewGameBoard Tic.GameBoard
+
+unNewGameBoard :: NewGameBoard -> Tic.GameBoard
+unNewGameBoard (NewGameBoard x) = x
+
+instance Eq NewGameBoard where
+        (==) x y = (==) (unNewGameBoard x) (unNewGameBoard y)
+
+instance Show NewGameBoard where
+        show = show . unNewGameBoard
+
+instance Arbitrary NewGameBoard where
+        arbitrary = fmap NewGameBoard ((replicateM 3 . replicateM 3) (arbitrary :: Gen GameBoardUnit))
+
 prop_AbsSignum :: ExtendedNum Integer -> Bool
 prop_AbsSignum x = abs x * signum x == x
+
+prop_checkFullNoValidMoves :: ((Int, Int), NewGameBoard) -> Bool
+prop_checkFullNoValidMoves (randMove, randBoard) = if checkFull (unNewGameBoard randBoard)
+                                                      then not (isValidMove randMove (unNewGameBoard randBoard))
+                                                      else True
 
 tests =
         [
@@ -32,7 +56,8 @@ tests =
                         testCase "Player 2 finds move to block player 1 win" test_3,
                         testCase "Player 1 finds move to block player 2 win" test_4,
                         testCase "isValidMove rejects inputs that imply moves with negative index" test_10,
-                        testCase "isValidMove rejects inputs that imply moves with too high of an index" test_11
+                        testCase "isValidMove rejects inputs that imply moves with too high of an index" test_11,
+                        testProperty "checkFull board == True implies that isValidMove will be false for any move on that board" prop_checkFullNoValidMoves
                 ]
         , testGroup "SuperTicTacToe Tests"
                 [
