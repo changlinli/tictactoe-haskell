@@ -64,8 +64,7 @@ available, run `tictactoe-haskell --help`.
 Running Tests
 -------------
 
-This game comes with a suite of tests, in case you think that you can write a
-better or faster AI or otherwise improve the game. To run these tests, it's
+This game comes with a suite of tests. To run these tests, it's
 first necessary to install some dependencies which the game itself does not
 need. These can be done simply via
 
