@@ -1,11 +1,13 @@
-Tic-tac-toe in Haskell
+Super Tic-tac-toe (and normal Tic-Tac-Toe) in Haskell
 ======================
 
 What it is:
 -----------
 
-Implementing tic-tac-toe as well as a game AI in Haskell! The game AI uses a
-minimax algorithm to determine what moves to play.
+Implementing Super tic-tac-toe as well as a game AI in Haskell! The game AI
+uses a minimax algorithm to determine what moves to play.
+
+Normal tic-tac-toe is included as well.
 
 How to build:
 -------------
@@ -33,11 +35,32 @@ Just by running `tictactoe-haskell` after building, you should be able to see
 the following.
 
     $ tictactoe-haskell
+     | |
+     | |
+     | |
 
-     | | 
-     | | 
-     | | 
+    Enter a move! Enter in tuple format, e.g. (1, 2).
 
-    Enter a move!
+Of course this is the boring normal version of tic-tac-toe. The super version
+can be accessed by running `tictactoe-haskell -s`. Running it should yield the
+following.
 
-Tada! You're done!
+    $ tictactoe-haskell -s
+     | | {} | | {} | |
+     | | {} | | {} | |
+     | | {} | | {} | |
+
+     | | {} | | {} | |
+     | | {} | | {} | |
+     | | {} | | {} | |
+
+     | | {} | | {} | |
+     | | {} | | {} | |
+     | | {} | | {} | |
+
+    Current board is (1,1)
+
+    Enter a move! Enter in tuple format, e.g. (1, 2).
+
+To play against an AI, use the `--useAI` option. To view all the options
+available, run `tictactoe-haskell --help`.
