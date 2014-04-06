@@ -1,11 +1,6 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE OverlappingInstances #-}
 
-import qualified Data.Sequence as DS
-import qualified Data.Foldable as DF
-import qualified Data.List as DL
-import qualified Negamax
 import qualified Tictactoe as Tic
 import qualified SuperTictactoe as Sup
 import qualified Options.Applicative as OA
