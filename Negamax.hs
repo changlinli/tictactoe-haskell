@@ -90,6 +90,25 @@ extendedNum2Num NegInf = error "Things went wrong!"
 extendedNum2Num PosInf = error "Things went wrong!"
 extendedNum2Num (Only x) = x
 
+evaluateAB :: NegamaxTree state -> (state -> ExtendedNum Integer) -> Int -> ExtendedNum Integer
+evaluateAB stateTree evalFunc depth = alphaBetaHelper stateTree evalFunc depth NegInf PosInf
+
+boolToNegPos :: (Num a) => Bool -> a
+boolToNegPos x = if x then 1 else (-1)
+
+alphaBetaHelper :: NegamaxTree state -> (state -> ExtendedNum Integer) -> Int -> ExtendedNum Integer -> ExtendedNum Integer -> ExtendedNum Integer
+alphaBetaHelper (Node state []) evalFunc _ _ _ = evalFunc state
+alphaBetaHelper (Node state _ ) evalFunc 0 _ _ = evalFunc state
+alphaBetaHelper (Node state xs) evalFunc depth alpha beta = (-1) * fst bestMoveBetaPair where
+        bestMoveBetaPair = foldl someFunc startingPair xs
+        startingPair = (PosInf, beta)
+        someFunc pair@(value, accBeta) childNode
+                | accBeta <= alpha = pair
+                | otherwise = (bestValue, newBeta)
+                where bestValue = min value newValue
+                      newValue = alphaBetaHelper childNode evalFunc (depth - 1) ((-1) * beta) ((-1) * alpha)
+                      newBeta = min accBeta newValue
+
 evaluate :: NegamaxTree state -> (state -> ExtendedNum Integer) -> Int -> ExtendedNum Integer
 evaluate (Node state [] ) evalFunc _ = evalFunc state
 evaluate (Node state _ ) evalFunc 0 = evalFunc state
@@ -120,7 +139,7 @@ findBestMove state moveFunc checkGameOverFunc generatePossibleMovesFunc evalFunc
         biggerOne acc newMove = if newMoveScore < accScore
                                    then newMove
                                    else acc
-                where newMoveScore = evaluate (generateNegamaxTree (moveFunc newMove state) moveFunc checkGameOverFunc generatePossibleMovesFunc) evalFunc depth
-                      accScore = evaluate (generateNegamaxTree (moveFunc acc state) moveFunc checkGameOverFunc generatePossibleMovesFunc) evalFunc depth
+                where newMoveScore = evaluateAB (generateNegamaxTree (moveFunc newMove state) moveFunc checkGameOverFunc generatePossibleMovesFunc) evalFunc depth
+                      accScore = evaluateAB (generateNegamaxTree (moveFunc acc state) moveFunc checkGameOverFunc generatePossibleMovesFunc) evalFunc depth
         moveList :: [move]
         moveList = generatePossibleMovesFunc state
