@@ -5,6 +5,7 @@ import qualified Tictactoe as Tic
 import qualified SuperTictactoe as Sup
 import qualified Options.Applicative as OA
 import qualified Data.Maybe as DM
+import qualified System.Exit as SE
 
 data PossibleFlags = Flags{superGame :: Bool, useAI :: String}
 
@@ -30,7 +31,8 @@ main = do
            else if superFlag && optsMakeSense gameType
                 then do Sup.playGameAI (DM.fromJust gameType) Sup.startingSuperState
                 else do
-                putStrLn "It looks like you may have made some errors in the useAI option. Usually this is because you used an invalid number. Run this program with the --help option for more details."
+                        putStrLn "It looks like you may have made some errors in the useAI option. Usually this is because you used an invalid number. Run this program with the --help option for more details."
+                        SE.exitWith (SE.ExitFailure 64)
         where
                 opts = OA.info (OA.helper OA.<*> flagParser)
                         ( OA.fullDesc
