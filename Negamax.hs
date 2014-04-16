@@ -97,9 +97,9 @@ alphaBetaHelper :: NegamaxTree state -> (state -> ExtendedNum Integer) -> Int ->
 alphaBetaHelper (Node state []) evalFunc _ _ _ = evalFunc state
 alphaBetaHelper (Node state _ ) evalFunc 0 _ _ = evalFunc state
 alphaBetaHelper (Node state xs) evalFunc depth alpha beta = (-1) * fst bestMoveBetaPair where
-        bestMoveBetaPair = foldl someFunc startingPair xs
+        bestMoveBetaPair = foldl accValueBeta startingPair xs
         startingPair = (PosInf, beta)
-        someFunc pair@(value, accBeta) childNode
+        accValueBeta pair@(value, accBeta) childNode
                 | accBeta <= alpha = pair
                 | otherwise = (bestValue, newBeta)
                 where bestValue = min value newValue
