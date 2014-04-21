@@ -13,7 +13,7 @@ module Negamax
 
 data ExtendedNum a = Only a | NegInf | PosInf deriving (Eq, Show)
 
-instance Num (ExtendedNum Integer) where
+instance (Num a, Eq a) => Num (ExtendedNum a) where
         Only a + Only b = Only (a + b)
         Only a + NegInf = NegInf
         NegInf + Only a = NegInf
@@ -45,7 +45,7 @@ instance Num (ExtendedNum Integer) where
         signum PosInf = Only 1
         signum NegInf = Only (-1)
 
-        fromInteger a = Only a
+        fromInteger a = Only $ fromInteger a
 
 instance (Ord a) => Ord (ExtendedNum a) where
         Only a <= Only b = a <= b
