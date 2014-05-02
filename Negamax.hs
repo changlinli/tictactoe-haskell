@@ -20,7 +20,7 @@ instance (Num a, Eq a) => Num (ExtendedNum a) where
         Only _ + PosInf = PosInf
         NegInf + NegInf = NegInf
         PosInf + PosInf = PosInf
-        NegInf + PosInf = PosInf
+        NegInf + PosInf = 0
         x + y = y + x
 
         x - y = x + Only (-1) * y
