@@ -7,7 +7,8 @@ module Negamax
         NegamaxTree (..),
         evaluate,
         generateNegamaxTree,
-        findBestMove
+        findBestMove,
+        extendedNum2Num
 ) where
 
 
@@ -15,10 +16,12 @@ data ExtendedNum a = Only a | NegInf | PosInf deriving (Eq, Show)
 
 instance (Num a, Eq a) => Num (ExtendedNum a) where
         Only a + Only b = Only (a + b)
-        Only a + NegInf = NegInf
-        NegInf + Only a = NegInf
-        Only a + PosInf = PosInf
-        PosInf + Only a = PosInf
+        Only _ + NegInf = NegInf
+        Only _ + PosInf = PosInf
+        NegInf + NegInf = NegInf
+        PosInf + PosInf = PosInf
+        NegInf + PosInf = PosInf
+        x + y = y + x
 
         x - y = x + Only (-1) * y
 
@@ -34,8 +37,7 @@ instance (Num a, Eq a) => Num (ExtendedNum a) where
         PosInf * PosInf = PosInf
         NegInf * NegInf = PosInf
         PosInf * NegInf = NegInf
-        NegInf * x = x * NegInf
-        PosInf * x = x * PosInf
+        x * y = y * x
 
         abs (Only a) = Only (abs a)
         abs NegInf = PosInf
@@ -49,10 +51,10 @@ instance (Num a, Eq a) => Num (ExtendedNum a) where
 
 instance (Ord a) => Ord (ExtendedNum a) where
         Only a <= Only b = a <= b
-        NegInf <= Only a = True
-        Only a <= NegInf = False
-        PosInf <= Only a = False
-        Only a <= PosInf = True
+        NegInf <= Only _ = True
+        Only _ <= NegInf = False
+        PosInf <= Only _ = False
+        Only _ <= PosInf = True
         NegInf <= PosInf = True
         PosInf <= NegInf = False
         PosInf <= PosInf = True
@@ -60,15 +62,14 @@ instance (Ord a) => Ord (ExtendedNum a) where
 
 instance Functor ExtendedNum where
         fmap f (Only a) = Only (f a)
-        fmap f NegInf = NegInf
-        fmap f PosInf = PosInf
+        fmap _ NegInf = NegInf
+        fmap _ PosInf = PosInf
 
-data NegamaxTree state = EmptyTree | Node state [NegamaxTree state] deriving (Eq)
+data NegamaxTree state = Node state [NegamaxTree state] deriving (Eq)
 
 instance Functor NegamaxTree where
         fmap f (Node a []) = Node (f a) []
         fmap f (Node a xs) = Node (f a) (map (fmap f) xs)
-        fmap f EmptyTree = EmptyTree
 
 instance (Show a) => Show (NegamaxTree a) where
         show = flip showHelperTree 0
@@ -78,8 +79,7 @@ indentNTimes n xs = iterate ((++) "  ") xs !! n
 
 showHelperTree :: (Show a) => NegamaxTree a -> Int -> String
 -- Helper function for show function
-showHelperTree EmptyTree n = indentNTimes n "EmptyTree"
-showHelperTree tree@(Node state xs) n
+showHelperTree (Node state xs) n
         | null xs = indentNTimes n baseString
         | otherwise = indentNTimes n baseString ++ foldl (++) "" restOfTree
         where baseString = "| " ++ show state ++ "\n"
@@ -96,7 +96,7 @@ evaluateAB stateTree evalFunc depth = alphaBetaHelper stateTree evalFunc depth N
 alphaBetaHelper :: NegamaxTree state -> (state -> ExtendedNum Integer) -> Int -> ExtendedNum Integer -> ExtendedNum Integer -> ExtendedNum Integer
 alphaBetaHelper (Node state []) evalFunc _ _ _ = evalFunc state
 alphaBetaHelper (Node state _ ) evalFunc 0 _ _ = evalFunc state
-alphaBetaHelper (Node state xs) evalFunc depth alpha beta = (-1) * fst bestMoveBetaPair where
+alphaBetaHelper (Node _ xs) evalFunc depth alpha beta = (-1) * fst bestMoveBetaPair where
         bestMoveBetaPair = foldl accValueBeta startingPair xs
         startingPair = (PosInf, beta)
         accValueBeta pair@(value, accBeta) childNode
@@ -109,7 +109,7 @@ alphaBetaHelper (Node state xs) evalFunc depth alpha beta = (-1) * fst bestMoveB
 evaluate :: NegamaxTree state -> (state -> ExtendedNum Integer) -> Int -> ExtendedNum Integer
 evaluate (Node state [] ) evalFunc _ = evalFunc state
 evaluate (Node state _ ) evalFunc 0 = evalFunc state
-evaluate (Node state xs) evalFunc depth = Only (-1) * minimum (map (evaluateOutOfOrder evalFunc (depth - 1)) xs) where
+evaluate (Node _ xs) evalFunc depth = Only (-1) * minimum (map (evaluateOutOfOrder evalFunc (depth - 1)) xs) where
         evaluateOutOfOrder = \x y z -> evaluate z x y
 
 generateNegamaxTree :: state -> (move -> state -> state)  -> (state -> Bool) -> (state -> [move]) -> NegamaxTree state
