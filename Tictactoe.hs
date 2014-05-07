@@ -3,15 +3,16 @@
 
 module Tictactoe where
 
-import qualified Data.Sequence as DS
-import qualified Data.Foldable as DF
 import qualified Data.List as DL
 import qualified Negamax
 import qualified Control.Applicative as CA
 import qualified Data.Maybe as DM
 
+boardSize :: Int
 boardSize = 3
+
 data Players = Player1 | Player2 deriving (Eq, Show)
+
 type GameBoardUnit = Maybe Players
 
 showGameBoardUnit :: GameBoardUnit -> String
@@ -20,7 +21,7 @@ showGameBoardUnit (Just Player2) = "O"
 showGameBoardUnit Nothing = " "
 
 type GameBoard = [[GameBoardUnit]]
-data GameState = PlayState { board :: GameBoard, currentPlayer :: Players } | Player1Win | Player2Win | Tie deriving (Show, Eq)
+data GameState = PlayState { currentBoard :: GameBoard, currentPlayer :: Players } | Player1Win | Player2Win | Tie deriving (Show, Eq)
 
 nextPlayer :: Players -> Players
 nextPlayer Player1 = Player2
@@ -39,14 +40,14 @@ startingBoard :: GameBoard
 startingBoard = [[Nothing, Nothing, Nothing], [Nothing, Nothing, Nothing], [Nothing, Nothing, Nothing]]
 
 startingState :: GameState
-startingState = PlayState { board=startingBoard, currentPlayer=Player1 }
+startingState = PlayState { currentBoard=startingBoard, currentPlayer=Player1 }
 
 -- TODO: Use state monad instead of self-hacked solution
 playMove :: (Int, Int) -> GameState -> GameState
 playMove _ Player1Win = error "The game is already over (Player 1 Won!)"
 playMove _ Player2Win = error "The game is already over (Player 2 Won!)"
 playMove _ Tie = error "The game is already over (there was a tie!)"
-playMove (a, b) (PlayState board player)= PlayState { board=newBoard, currentPlayer=nextPlayer player }
+playMove (a, b) (PlayState board player)= PlayState { currentBoard=newBoard, currentPlayer=nextPlayer player }
         where
                 newBoard = updateBoard board (a, b) (Just player)
 
@@ -56,6 +57,18 @@ getDiagonals
         [[ x1, _ , x3],
         [_, y1 , _],
         [z1, _ , z3]] = [[x1, y1, z3], [x3, y1, z1]]
+getDiagonals ys@(x:_) = [getLRDiagonals ys 0, getRLDiagonals ys (length x)]
+getDiagonals [] = [[],[]]
+
+-- Left to right diagonals
+getLRDiagonals :: [[a]] -> Int -> [a]
+getLRDiagonals (x:xs) start = (x !! start) : (getLRDiagonals xs (start + 1))
+getLRDiagonals [] _ = []
+
+-- Right to left diagonals
+getRLDiagonals :: [[a]] -> Int -> [a]
+getRLDiagonals (x:xs) start = (x !! start) : (getRLDiagonals xs (start - 1))
+getRLDiagonals [] _ = []
 
 -- Yes I know, this does nothing, but it might if GameBoard changes from
 -- just being a list of lists
@@ -63,11 +76,13 @@ getRows :: [[a]] -> [[a]]
 getRows board = board
 
 getCols :: [[a]] -> [[a]]
+-- For performance reasons, I have a specific 3x3 case which is faster than
+-- transposing
 getCols
         [[ x1, x2, x3],
         [y1, y2, y3],
         [z1, z2, z3]] = [[x1, y1, z1], [x2, y2, z2], [x3, y3, z3]]
-{-getCols board = transposeBoard board-}
+getCols board = transposeBoard board
 
 transposeBoard :: [[a]] -> [[a]]
 transposeBoard board = DL.transpose board
@@ -86,7 +101,8 @@ checkGameOver (PlayState board player)
         | findWinner board == Just Player1 = Player1Win
         | findWinner board == Just Player2 = Player2Win
         | checkFull board = Tie
-        | otherwise = PlayState {board=board, currentPlayer=player}
+        | otherwise = PlayState {currentBoard=board, currentPlayer=player}
+checkGameOver x = x
 
 isGameOver :: GameState -> Bool
 isGameOver state = if checkGameOver state /= state
@@ -94,6 +110,7 @@ isGameOver state = if checkGameOver state /= state
                       else False
 
 checkFull :: GameBoard -> Bool
+checkFull [] = True -- For totality's sake
 checkFull [row]
         | Nothing `elem` row = False
         | otherwise = True
@@ -102,6 +119,7 @@ checkFull (x:xs)
         | otherwise = checkFull xs
 
 updateList :: [a] -> a -> Int -> [a]
+updateList [] _ _ = error "updateList: Tried to update an empty list!"
 updateList (x:xs) newItem index
         | index == 0 = newItem:xs
         | otherwise = x:(updateList xs newItem (index - 1))
@@ -120,7 +138,13 @@ checkDiagonals :: GameBoard -> Maybe Players
 checkDiagonals board = checkThreeInARow (getDiagonals board)
 
 showGameBoard :: GameBoard -> String
-showGameBoard
+showGameBoard board = foldl showRow "" board where
+        showRow acc (x:xs) = acc ++ (foldl accRow (showG x) xs) ++ "\n"
+        accRow subAcc rowUnit = subAcc ++ "|" ++ showG rowUnit
+        showG = showGameBoardUnit
+
+showGameBoardOld :: GameBoard -> String
+showGameBoardOld
         [[a0, a1, a2],
         [b0, b1, b2],
         [c0, c1, c2]] =
@@ -130,13 +154,14 @@ showGameBoard
         where showG = showGameBoardUnit
 
 evalFunc :: GameState -> Negamax.ExtendedNum Integer
-evalFunc state@(PlayState {board=board, currentPlayer=player})
+evalFunc state@(PlayState {currentPlayer=player})
         | player == Player1 && checkGameOver state == Player1Win = Negamax.PosInf
         | player == Player2 && checkGameOver state == Player2Win = Negamax.PosInf
         | player == Player1 && checkGameOver state == Player2Win = Negamax.NegInf
         | player == Player2 && checkGameOver state == Player1Win = Negamax.NegInf
         | checkGameOver state == Tie = Negamax.Only 0
         | otherwise = Negamax.Only 0
+evalFunc _ = error "evalFunc: Called evalFunc on a state which has no board to evaluate!"
 
 enumPair :: (Int, Int) -> (Int, Int) -> [(Int, Int)]
 enumPair (a0, b0) (a1, b1) = [a0 .. a1] >>= \x -> [b0 .. b1] >>= \y -> return (x, y)
@@ -145,7 +170,8 @@ allPossiblePairs :: [(Int, Int)]
 allPossiblePairs = enumPair (0, 0) (boardSize - 1, boardSize - 1)
 
 generateValidMoves :: GameState -> [(Int, Int)] -> [(Int, Int)]
-generateValidMoves (PlayState board player) xs = filter (flip isValidMove board) xs
+generateValidMoves (PlayState board _) xs = filter (flip isValidMove board) xs
+generateValidMoves _ _ = []
 
 maximumDepth :: Int
 maximumDepth = 10
@@ -181,27 +207,27 @@ getInputWithRetry = getInput >>= (\x -> if DM.isNothing x
                        else return (DM.fromJust x))
 
 showMoveResult :: (Int, Int) -> GameState -> IO GameState
-showMoveResult move state@(PlayState {board=board, currentPlayer=player}) =
+showMoveResult move state@(PlayState {currentBoard=board, currentPlayer=player}) =
         playMoveRobust move state >>=
-        (\y@PlayState {board=changed, currentPlayer=newPlayer} -> putStrLn (showGameBoard changed) >> return (checkGameOver y))
+        (\y@PlayState {currentBoard=changed, currentPlayer=newPlayer} -> putStrLn (showGameBoard changed) >> return (checkGameOver y))
 
 playGameAI :: Int -> GameState -> IO ()
 playGameAI _ Player1Win = putStrLn "Player 1 wins!"
 playGameAI _ Player2Win = putStrLn "Player 2 wins!"
 playGameAI _ Tie = putStrLn "There is a tie!"
-playGameAI 0 PlayState {board=board, currentPlayer=player} = do
+playGameAI 0 PlayState {currentBoard=board, currentPlayer=player} = do
         putStrLn (showGameBoard board)
         x <- getInputWithRetry
-        y <- playMoveRobust x (PlayState {board=board, currentPlayer=player})
+        y <- playMoveRobust x (PlayState {currentBoard=board, currentPlayer=player})
         z <- return (checkGameOver y)
         playGameAI 0 z
-playGameAI 1 state@(PlayState {board=board, currentPlayer=player})
+playGameAI 1 state@(PlayState {currentBoard=board, currentPlayer=player})
         | player == Player1 = getInputWithRetry >>= (\x -> showMoveResult x state) >>= playGameAI 1
         | player == Player2 = return (findBestMove state) >>= (\x -> showMoveResult x state) >>= playGameAI 1
-playGameAI 2 state@(PlayState {board=board, currentPlayer=player})
+playGameAI 2 state@(PlayState {currentBoard=board, currentPlayer=player})
         | player == Player2 = getInputWithRetry >>= (\x -> showMoveResult x state) >>= playGameAI 2
         | player == Player1 = return (findBestMove state) >>= (\x -> showMoveResult x state) >>= playGameAI 2
-playGameAI 3 state@(PlayState {board=board, currentPlayer=player}) =
+playGameAI 3 state@(PlayState {currentBoard=board, currentPlayer=player}) =
         return (findBestMove state) >>= (\x -> showMoveResult x state) >>= playGameAI 3
 
 selectGameType :: Int -> (GameState -> IO ())
