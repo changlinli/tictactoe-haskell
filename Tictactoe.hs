@@ -143,16 +143,6 @@ showGameBoard board = foldl showRow "" board where
         accRow subAcc rowUnit = subAcc ++ "|" ++ showG rowUnit
         showG = showGameBoardUnit
 
-showGameBoardOld :: GameBoard -> String
-showGameBoardOld
-        [[a0, a1, a2],
-        [b0, b1, b2],
-        [c0, c1, c2]] =
-        showG a0 ++ "|" ++ showG a1 ++ "|" ++ showG a2 ++ "\n" ++
-        showG b0 ++ "|" ++ showG b1 ++ "|" ++ showG b2 ++ "\n" ++
-        showG c0 ++ "|" ++ showG c1 ++ "|" ++ showG c2 ++ "\n"
-        where showG = showGameBoardUnit
-
 evalFunc :: GameState -> Negamax.ExtendedNum Integer
 evalFunc state@(PlayState {currentPlayer=player})
         | player == Player1 && checkGameOver state == Player1Win = Negamax.PosInf

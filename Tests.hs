@@ -43,9 +43,6 @@ prop_checkFullNoValidMoves (randMove, randBoard) = if checkFull (unNewGameBoard 
                                                       then not (isValidMove randMove (unNewGameBoard randBoard))
                                                       else True
 
-prop_showGameBoardOldSameAsShowGameBoard :: NewGameBoard -> Bool
-prop_showGameBoardOldSameAsShowGameBoard randBoard = Tic.showGameBoard (unNewGameBoard randBoard) == Tic.showGameBoardOld (unNewGameBoard randBoard)
-
 tests =
         [
         testGroup "Negamax Tests"
@@ -60,8 +57,7 @@ tests =
                         testCase "Player 1 finds move to block player 2 win" test_4,
                         testCase "isValidMove rejects inputs that imply moves with negative index" test_10,
                         testCase "isValidMove rejects inputs that imply moves with too high of an index" test_11,
-                        testProperty "checkFull board == True implies that isValidMove will be false for any move on that board" prop_checkFullNoValidMoves,
-                        testProperty "showGameBoardOld agrees with the new showGameBoard functions" prop_showGameBoardOldSameAsShowGameBoard
+                        testProperty "checkFull board == True implies that isValidMove will be false for any move on that board" prop_checkFullNoValidMoves
                 ]
         , testGroup "SuperTicTacToe Tests"
                 [
