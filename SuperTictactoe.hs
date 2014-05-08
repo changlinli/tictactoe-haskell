@@ -45,6 +45,7 @@ evalFunc state@SuperPlayState{currentSuperBoard=superBoard, currentPlayer=player
                 x | x == Just player -> 1
                 x | x == Just (Tic.nextPlayer player) -> (-1)
                 _ -> 0
+evalFunc _ = error "Can only use evaluation function on a game state with a board"
 
 checkSuperFull :: SuperGameBoard -> Bool
 checkSuperFull superBoard = and (map foldRow superBoard)
@@ -83,6 +84,7 @@ isValidSuperMove :: (Int, Int) -> SuperGameState -> Bool
 isValidSuperMove (a, b) SuperPlayState{currentMiniBoard=miniBoardCoord, currentSuperBoard=superBoard} = Tic.isValidMove (a, b) actualBoard && sizeCond
         where actualBoard = getMiniBoard miniBoardCoord superBoard
               sizeCond = a < superBoardSize && b < superBoardSize
+isValidSuperMove _ _ = error "Cannot determine the validity of a move when there is no board in the game state!"
 
 getMiniBoard :: (Int, Int) -> SuperGameBoard -> Tic.GameBoard
 getMiniBoard (a, b) superBoard = (superBoard !! b) !! a
@@ -94,6 +96,7 @@ updateSuperState SuperPlayState{currentMiniBoard=(a, b), currentSuperBoard=oldSu
               actualBoard = Tic.updateBoard (getMiniBoard (a, b) oldSuperBoard) (x, y) (Just player)
               newMiniBoardCoord = (x, y)
               newPlayer = Tic.nextPlayer player
+updateSuperState x _ = x
 
 playSuperMove :: (Int, Int) -> SuperGameState -> SuperGameState
 playSuperMove _ Player1WinSuper = error "The game is already over (Player 1 Won!)"
@@ -106,13 +109,7 @@ playSuperMove (a, b) currentState = updateSuperState currentState (a, b)
 (-+-) xs ys = unlines (zipWith (++) (lines xs) (lines ys))
 
 showSuperGameBoard :: SuperGameBoard -> String
-showSuperGameBoard
-        [[a0, a1, a2],
-        [b0, b1, b2],
-        [c0, c1, c2]] =
-        Tic.showGameBoard a0 -+- "{}\n{}\n{}\n" -+- Tic.showGameBoard a1 -+- "{}\n{}\n{}\n" -+- Tic.showGameBoard a2 ++ "\n" ++
-        Tic.showGameBoard b0 -+- "{}\n{}\n{}\n" -+- Tic.showGameBoard b1 -+- "{}\n{}\n{}\n" -+- Tic.showGameBoard b2 ++ "\n" ++
-        Tic.showGameBoard c0 -+- "{}\n{}\n{}\n" -+- Tic.showGameBoard c1 -+- "{}\n{}\n{}\n" -+- Tic.showGameBoard c2
+showSuperGameBoard superBoard = Tic.showBoard superBoard "{}\n{}\n{}\n" Tic.showGameBoard (-+-)
 
 maximumDepth :: Int
 maximumDepth = 4
@@ -209,3 +206,4 @@ playGameAI 3 state@SuperPlayState{currentMiniBoard=miniBoardCoord, currentSuperB
                 y <- return (playSuperMove x state)
                 z <- return (checkSuperGameOver y)
                 playGameAI 3 z
+playGameAI _ _ = error "Can only use 0, 1, 2, 3 in the first argument of playGameAI!"

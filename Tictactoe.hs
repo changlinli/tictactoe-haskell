@@ -137,12 +137,20 @@ sameEntries xs = and $ map (== head xs) (tail xs)
 checkDiagonals :: GameBoard -> Maybe Players
 checkDiagonals board = checkThreeInARow (getDiagonals board)
 
-showGameBoard :: GameBoard -> String
-showGameBoard board = foldl showRow "" board where
-        showRow acc (x:xs) = acc ++ (foldl accRow (showG x) xs) ++ "\n"
+showBoard ::
+        [[a]] ->
+        String ->
+        (a -> String) ->
+        (String -> String -> String) ->
+        String
+showBoard board interleaveStr showUnit concatFunc = foldl showRow "" board where
+        showRow acc (x:xs) = acc ++ (foldl accRow (showUnit x) xs) ++ "\n"
         showRow acc [] = acc ++ "\n"
-        accRow subAcc rowUnit = subAcc ++ "|" ++ showG rowUnit
-        showG = showGameBoardUnit
+        accRow subAcc rowUnit = subAcc `concatFunc` interleaveStr `concatFunc` showUnit rowUnit
+
+
+showGameBoard :: GameBoard -> String
+showGameBoard board = showBoard board "|" showGameBoardUnit (++)
 
 evalFunc :: GameState -> Negamax.ExtendedNum Integer
 evalFunc state@(PlayState {currentPlayer=player})
