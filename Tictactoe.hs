@@ -140,6 +140,7 @@ checkDiagonals board = checkThreeInARow (getDiagonals board)
 showGameBoard :: GameBoard -> String
 showGameBoard board = foldl showRow "" board where
         showRow acc (x:xs) = acc ++ (foldl accRow (showG x) xs) ++ "\n"
+        showRow acc [] = acc ++ "\n"
         accRow subAcc rowUnit = subAcc ++ "|" ++ showG rowUnit
         showG = showGameBoardUnit
 
@@ -177,19 +178,20 @@ retry input condition moveAction redoAction = if condition input
                                            else redoAction >>= (\a -> retry a condition moveAction redoAction)
 
 playMoveRobust :: (Int, Int) -> GameState -> IO GameState
-playMoveRobust moveCoord currentState@(PlayState currentBoard currentPlayer) =
+playMoveRobust moveCoord currentState@(PlayState board _) =
         retry
                 moveCoord
-                (\x -> isValidMove x currentBoard)
+                (\x -> isValidMove x board)
                 (playMoveIO currentState)
                 (putStrLn "Invalid move!" >> getInputWithRetry)
         where playMoveIO = \x y -> return $ playMove y x
+playMoveRobust _ x = putStrLn "This move didn't do anything because the game is already over!" >> return x
 
 maybeRead :: (Read a) => String -> Maybe a
 maybeRead = fmap fst . DM.listToMaybe . reads
 
 getInput :: IO (Maybe (Int, Int))
-getInput = putStrLn "Enter a move! Enter in tuple format, e.g. (1, 2)." >>= (\x -> fmap maybeRead getLine)
+getInput = putStrLn "Enter a move! Enter in tuple format, e.g. (1, 2)." >>= (\_ -> fmap maybeRead getLine)
 
 getInputWithRetry :: IO (Int, Int)
 getInputWithRetry = getInput >>= (\x -> if DM.isNothing x
@@ -197,9 +199,9 @@ getInputWithRetry = getInput >>= (\x -> if DM.isNothing x
                        else return (DM.fromJust x))
 
 showMoveResult :: (Int, Int) -> GameState -> IO GameState
-showMoveResult move state@(PlayState {currentBoard=board, currentPlayer=player}) =
+showMoveResult move state =
         playMoveRobust move state >>=
-        (\y@PlayState {currentBoard=changed, currentPlayer=newPlayer} -> putStrLn (showGameBoard changed) >> return (checkGameOver y))
+        (\y@PlayState {currentBoard=changed} -> putStrLn (showGameBoard changed) >> return (checkGameOver y))
 
 playGameAI :: Int -> GameState -> IO ()
 playGameAI _ Player1Win = putStrLn "Player 1 wins!"
@@ -211,17 +213,19 @@ playGameAI 0 PlayState {currentBoard=board, currentPlayer=player} = do
         y <- playMoveRobust x (PlayState {currentBoard=board, currentPlayer=player})
         z <- return (checkGameOver y)
         playGameAI 0 z
-playGameAI 1 state@(PlayState {currentBoard=board, currentPlayer=player})
-        | player == Player1 = getInputWithRetry >>= (\x -> showMoveResult x state) >>= playGameAI 1
-        | player == Player2 = return (findBestMove state) >>= (\x -> showMoveResult x state) >>= playGameAI 1
-playGameAI 2 state@(PlayState {currentBoard=board, currentPlayer=player})
-        | player == Player2 = getInputWithRetry >>= (\x -> showMoveResult x state) >>= playGameAI 2
-        | player == Player1 = return (findBestMove state) >>= (\x -> showMoveResult x state) >>= playGameAI 2
-playGameAI 3 state@(PlayState {currentBoard=board, currentPlayer=player}) =
+playGameAI 1 state
+        | currentPlayer state == Player1 = getInputWithRetry >>= (\x -> showMoveResult x state) >>= playGameAI 1
+        | currentPlayer state == Player2 = return (findBestMove state) >>= (\x -> showMoveResult x state) >>= playGameAI 1
+playGameAI 2 state
+        | currentPlayer state == Player2 = getInputWithRetry >>= (\x -> showMoveResult x state) >>= playGameAI 2
+        | currentPlayer state == Player1 = return (findBestMove state) >>= (\x -> showMoveResult x state) >>= playGameAI 2
+playGameAI 3 state =
         return (findBestMove state) >>= (\x -> showMoveResult x state) >>= playGameAI 3
+playGameAI _ _ = error "Can only use 0, 1, 2, 3 in the first argument of playGameAI!"
 
 selectGameType :: Int -> (GameState -> IO ())
 selectGameType 0 = playGameAI 0
 selectGameType 1 = playGameAI 1
 selectGameType 2 = playGameAI 2
 selectGameType 3 = playGameAI 3
+selectGameType _ = error "Can only use 0, 1, 2, or 3 in the argument to selectGameType!"
