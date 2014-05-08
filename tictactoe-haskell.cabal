@@ -58,4 +58,4 @@ Test-Suite test-foo
   type:               exitcode-stdio-1.0
   main-is:            Tests.hs
   build-depends:      base ==4.6.*, test-framework ==0.8.*, QuickCheck ==2.6.*, HUnit ==1.*, containers ==0.5.*, test-framework-quickcheck2 ==0.3.*, test-framework-hunit ==0.3.*, optparse-applicative==0.8.*
-  ghc-options:        -Wall
+  ghc-options:        -Wall -Werror

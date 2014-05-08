@@ -1,12 +1,11 @@
 {-# LANGUAGE FlexibleInstances #-}
+{-# OPTIONS_GHC -fno-warn-missing-signatures -fno-warn-orphans
+-fno-warn-unused-binds #-}
 
 import Test.Framework (defaultMain, testGroup)
 import Test.Framework.Providers.HUnit
 import Test.Framework.Providers.QuickCheck2 (testProperty)
-
 import Control.Monad
-
-import Data.Char
 import Test.QuickCheck
 import Test.HUnit
 import Negamax
