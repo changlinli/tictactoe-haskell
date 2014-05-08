@@ -1,6 +1,3 @@
-{-# LANGUAGE TypeSynonymInstances #-}
-{-# LANGUAGE FlexibleInstances #-}
-
 import qualified Tictactoe as Tic
 import qualified SuperTictactoe as Sup
 import qualified Options.Applicative as OA
@@ -24,11 +21,11 @@ flagParser = Flags
 
 main :: IO ()
 main = do
-        Flags superFlag useAINum <- OA.execParser opts
-        let gameType = Tic.maybeRead useAINum :: Maybe Int
-        if not superFlag && optsMakeSense gameType
+        parsedFlags <- OA.execParser opts
+        let gameType = Tic.maybeRead (useAI parsedFlags) :: Maybe Int
+        if not (superGame parsedFlags) && optsMakeSense gameType
            then do Tic.playGameAI (DM.fromJust gameType) Tic.startingState
-           else if superFlag && optsMakeSense gameType
+           else if (superGame parsedFlags) && optsMakeSense gameType
                 then do Sup.playGameAI (DM.fromJust gameType) Sup.startingSuperState
                 else do
                         putStrLn "It looks like you may have made some errors in the useAI option. Usually this is because you used an invalid number. Run this program with the --help option for more details."
