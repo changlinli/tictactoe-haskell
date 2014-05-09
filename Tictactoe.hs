@@ -230,10 +230,3 @@ playGameAI 2 state
 playGameAI 3 state =
         return (findBestMove state) >>= (\x -> showMoveResult x state) >>= playGameAI 3
 playGameAI _ _ = error "Can only use 0, 1, 2, 3 in the first argument of playGameAI!"
-
-selectGameType :: Int -> (GameState -> IO ())
-selectGameType 0 = playGameAI 0
-selectGameType 1 = playGameAI 1
-selectGameType 2 = playGameAI 2
-selectGameType 3 = playGameAI 3
-selectGameType _ = error "Can only use 0, 1, 2, or 3 in the argument to selectGameType!"
