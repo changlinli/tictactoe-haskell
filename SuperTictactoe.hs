@@ -67,11 +67,16 @@ checkSuperDiagonals superBoard = checkSuperThreeInARow (Tic.getDiagonals superBo
 findSuperWinner :: SuperGameBoard -> Maybe Tic.Players
 findSuperWinner superBoard = checkSuperDiagonals superBoard CA.<|> checkSuperRows superBoard CA.<|> checkSuperCols superBoard
 
+checkAnyValidSuperMoves :: SuperGameState -> Bool
+checkAnyValidSuperMoves superState = foldl (\x y -> x || y) False listOfValidMoves
+        where listOfValidMoves = fmap (flip isValidSuperMove superState) allPossiblePairs
+
 checkSuperGameOver :: SuperGameState -> SuperGameState
 checkSuperGameOver currentState
         | findSuperWinner superBoard == Just Tic.Player1 = Player1WinSuper
         | findSuperWinner superBoard == Just Tic.Player2 = Player2WinSuper
         | checkSuperFull superBoard = TieSuper
+        | not (checkAnyValidSuperMoves currentState) = TieSuper
         | otherwise = currentState
         where superBoard = currentSuperBoard currentState
 
@@ -81,9 +86,12 @@ isSuperGameOver state = if checkSuperGameOver state /= state
                            else False
 
 isValidSuperMove :: (Int, Int) -> SuperGameState -> Bool
-isValidSuperMove (a, b) SuperPlayState{currentMiniBoard=miniBoardCoord, currentSuperBoard=superBoard} = Tic.isValidMove (a, b) actualBoard && sizeCond
+isValidSuperMove (a, b) superState@SuperPlayState{currentMiniBoard=miniBoardCoord, currentSuperBoard=superBoard} = Tic.isValidMove (a, b) actualBoard && sizeCond && nextMoveValid
         where actualBoard = getMiniBoard miniBoardCoord superBoard
               sizeCond = a < superBoardSize && b < superBoardSize
+              nextMoveValid = not (Tic.checkFull nextMiniBoard)
+              nextMiniBoard = getMiniBoard (currentMiniBoard nextState) (currentSuperBoard nextState)
+              nextState = playSuperMove (a, b) superState
 isValidSuperMove _ _ = error "Cannot determine the validity of a move when there is no board in the game state!"
 
 getMiniBoard :: (Int, Int) -> SuperGameBoard -> Tic.GameBoard
@@ -122,8 +130,8 @@ generateValidSuperMoves superState = filter (flip Tic.isValidMove (getMiniBoard 
         where miniBoardCoord = currentMiniBoard superState
               superBoard = currentSuperBoard superState
 
-findBestMove :: SuperGameState -> (Int, Int)
-findBestMove state = Negamax.findBestMove state playSuperMove isSuperGameOver generateValidSuperMoves evalFunc maximumDepth
+findBestMove :: SuperGameState -> Int -> (Int, Int)
+findBestMove state depth = Negamax.findBestMove state playSuperMove isSuperGameOver generateValidSuperMoves evalFunc depth
 
 playSuperMoveWithRetry :: (Int, Int) -> SuperGameState -> IO SuperGameState
 playSuperMoveWithRetry moveCoord currentState =
@@ -134,12 +142,12 @@ playSuperMoveWithRetry moveCoord currentState =
                 (putStrLn "Invalid move!" >> Tic.getInputWithRetry)
         where playSuperMoveIO = \x y -> return $ playSuperMove y x
 
-playAIMove :: SuperGameState -> IO SuperGameState
-playAIMove state = do
+playAIMove :: SuperGameState -> Int -> IO SuperGameState
+playAIMove state depth = do
         putStrLn (showSuperGameBoard superBoard)
         putStrLn ("Current board is " ++ (show miniBoardCoord))
         putStrLn "AI is playing now"
-        x <- return (findBestMove state)
+        x <- return (findBestMove state depth)
         y <- return (playSuperMove x state)
         return (checkSuperGameOver y)
         where
@@ -165,13 +173,13 @@ playGameAI 0 state = playHumanMove state >>= playGameAI 0
 
 playGameAI 1 state
         | player == Tic.Player1 = playHumanMove state >>= playGameAI 1
-        | player == Tic.Player2 = playAIMove state >>= playGameAI 1
+        | player == Tic.Player2 = playAIMove state maximumDepth >>= playGameAI 1
         where player = currentPlayer state
 
 playGameAI 2 state
         | player == Tic.Player2 = playHumanMove state >>= playGameAI 2
-        | player == Tic.Player1 = playAIMove state >>= playGameAI 2
+        | player == Tic.Player1 = playAIMove state maximumDepth >>= playGameAI 2
         where player = currentPlayer state
 
-playGameAI 3 state = playAIMove state >>= playGameAI 3
+playGameAI 3 state = playAIMove state maximumDepth >>= playGameAI 3
 playGameAI _ _ = error "Can only use 0, 1, 2, 3 in the first argument of playGameAI!"

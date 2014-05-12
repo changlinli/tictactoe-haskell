@@ -9,6 +9,7 @@ import Control.Monad
 import Test.QuickCheck
 import Test.HUnit
 import Negamax
+import Control.Applicative
 import Tictactoe as Tic
 import qualified SuperTictactoe as Sup
 
@@ -66,7 +67,11 @@ tests =
                         testCase "findBestMove AI as player 2 finds winning move" test_8,
                         testCase "Game recognizes Player 2 victory when left column is won, but are different mini boards" test_9,
                         testCase "isValidMove rejects inputs that imply moves with negative index" test_12,
-                        testCase "isValidMove rejects inputs that imply moves with too high of an index" test_13
+                        testCase "isValidMove rejects inputs that imply moves with too high of an index" test_13,
+                        testCase "isValidSuperMove rejects an input which sends us to a board that is already full" test_14,
+                        testCase "checkAnyValidMove rejects a state in all possible moves send us to a board that is already full" test_15,
+                        testCase "superAI can make at least one move from a given state" test_16,
+                        testCase "superAI can make move from beginning" test_17
                 ]
         ]
 
@@ -82,9 +87,9 @@ test_5 = Sup.checkSuperGameOver winningSuperStateAllMiniBoardsSame @?= Sup.Playe
 
 test_6 = Sup.checkSuperGameOver winningSuperStateDifferentMiniBoards @?= Sup.Player1WinSuper
 
-test_7 = Sup.findBestMove nearlyWinningSuperState1 @?= (2, 0)
+test_7 = Sup.findBestMove nearlyWinningSuperState1 Sup.maximumDepth @?= (2, 0)
 
-test_8 = Sup.findBestMove nearlyWinningSuperState2 @?= (0, 1)
+test_8 = Sup.findBestMove nearlyWinningSuperState2 Sup.maximumDepth @?= (0, 1)
 
 test_9 = Sup.checkSuperGameOver winningSuperState2 @?= Sup.Player2WinSuper
 
@@ -95,6 +100,32 @@ test_11 = Tic.isValidMove (3, 2) Tic.startingBoard || Tic.isValidMove (3, 2) Tic
 test_12 = Sup.isValidSuperMove (-1, 0) Sup.startingSuperState || Sup.isValidSuperMove (0, -1 ) Sup.startingSuperState || Sup.isValidSuperMove (-2, -3) Sup.startingSuperState @?= False
 
 test_13 = Sup.isValidSuperMove (3, 2) Sup.startingSuperState || Sup.isValidSuperMove (3, 2) Sup.startingSuperState || Sup.isValidSuperMove (3, 3) Sup.startingSuperState @?= False
+
+test_14 = Sup.isValidSuperMove (1, 1) fullCenterMiniBoardSuperState @?= False
+
+test_15 = Sup.checkAnyValidSuperMoves allMiniBoardsFullExceptOneSuperState @?= False
+
+test_16 = assert (fmap ((==) True)
+        (
+                 (fmap ((/=) Sup.TieSuper) nextState) *||*
+                 (fmap ((/=) Sup.Player1WinSuper) nextState) *||*
+                 (fmap ((/=) Sup.Player2WinSuper) nextState) *||*
+                 (fmap ((/=) nearlyFullSuperBoardSuperState) nextState)
+        ))
+        where nextState = Sup.playAIMove nearlyFullSuperBoardSuperState 4
+              x *||* y = (||) <$> x <*> y
+              infixr 2 *||*
+
+test_17 = assert (fmap ((==) True)
+        (
+                 (fmap ((/=) Sup.TieSuper) nextState) *&&*
+                 (fmap ((/=) Sup.Player1WinSuper) nextState) *&&*
+                 (fmap ((/=) Sup.Player2WinSuper) nextState) *&&*
+                 (fmap ((/=) Sup.startingSuperState) nextState)
+        ))
+        where nextState = Sup.playAIMove Sup.startingSuperState 2
+              x *&&* y = (&&) <$> x <*> y
+              infixr 2 *&&*
 
 nearlyWinningBoard1 :: GameBoard
 nearlyWinningBoard1 =
@@ -243,5 +274,61 @@ fullMiniBoardTieSuperBoard =
 
 fullMiniBoardTieState :: Sup.SuperGameState
 fullMiniBoardTieState = Sup.SuperPlayState (0, 0) fullMiniBoardTieSuperBoard Player2
+
+miniBoardOneElement :: Tic.GameBoard
+miniBoardOneElement =
+        [
+                [Nothing, Nothing, Nothing],
+                [Nothing, Just Player1, Nothing],
+                [Nothing, Nothing, Nothing]
+        ]
+
+miniBoardFullElementWithCenterElement :: Tic.GameBoard
+miniBoardFullElementWithCenterElement =
+        [
+                [Just Player2, Just Player2, Just Player2],
+                [Just Player2, Just Player1, Just Player2],
+                [Just Player2, Just Player2, Just Player2]
+        ]
+
+fullCenterMiniBoardSuperBoard :: Sup.SuperGameBoard
+fullCenterMiniBoardSuperBoard =
+        [
+                [Tic.startingBoard, miniBoardOneElement, miniBoardOneElement],
+                [miniBoardOneElement, miniBoardFullElementWithCenterElement, miniBoardOneElement],
+                [miniBoardOneElement, miniBoardOneElement, miniBoardOneElement]
+        ]
+
+fullCenterMiniBoardSuperState :: Sup.SuperGameState
+fullCenterMiniBoardSuperState = Sup.SuperPlayState (0, 0) fullCenterMiniBoardSuperBoard Tic.Player1
+
+topLeftTakenMiniBoard :: Tic.GameBoard
+topLeftTakenMiniBoard =
+        [
+                [Just Player1, Nothing, Nothing],
+                [Nothing, Nothing, Nothing],
+                [Nothing, Nothing, Nothing]
+        ]
+
+allMiniBoardsFullExceptOne :: Sup.SuperGameBoard
+allMiniBoardsFullExceptOne =
+        [
+                [topLeftTakenMiniBoard, fullMiniBoardTie, fullMiniBoardTie],
+                [fullMiniBoardTie, fullMiniBoardTie, fullMiniBoardTie],
+                [fullMiniBoardTie, fullMiniBoardTie, fullMiniBoardTie]
+        ]
+
+allMiniBoardsFullExceptOneSuperState :: Sup.SuperGameState
+allMiniBoardsFullExceptOneSuperState = Sup.SuperPlayState (0, 0) allMiniBoardsFullExceptOne Tic.Player1
+
+nearlyFullSuperBoard :: Sup.SuperGameBoard
+nearlyFullSuperBoard =
+        [
+                [Tic.startingBoard, Tic.startingBoard, fullMiniBoardTie],
+                [fullMiniBoardTie, fullMiniBoardTie, fullMiniBoardTie],
+                [fullMiniBoardTie, fullMiniBoardTie, fullMiniBoardTie]
+        ]
+
+nearlyFullSuperBoardSuperState = Sup.SuperPlayState (0, 0) nearlyFullSuperBoard Tic.Player1
 
 main = defaultMain tests
