@@ -88,3 +88,20 @@ go through. It is located at `pre-commit-hook.sh` and a simple
 should be sufficient to activate the hook. Note that the pre-commit hook is
 based off of Git's default one and so includes the portion which checks for
 trailing whitespace.
+
+Bash Completion
+---------------
+
+If you use bash, because this program uses the package `optparse-applicative`,
+it comes with a bash-completion script. Simply run
+
+    tictactoe-haskell --bash-completion-script `which tictactoe-haskell`
+
+and copy the output of this to whatever directory you normally would for your
+bash completion scripts. This could mean `~/.bash_profile` or make a new file in
+`/etc/bash_completion.d/` and store the output of this command there.
+
+For the original instructions that came with the `optparse-applicative` package,
+see
+[https://github.com/pcapriotti/optparse-applicative/wiki/Bash-Completion](https://github.com/pcapriotti/optparse-applicative/wiki/Bash-Completion
+"Link to original bash-completion article for optparse-applicative")
