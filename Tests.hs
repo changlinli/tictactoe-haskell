@@ -43,11 +43,15 @@ prop_checkFullNoValidMoves (randMove, randBoard) = if checkFull (unNewGameBoard 
                                                       then not (isValidMove randMove (unNewGameBoard randBoard))
                                                       else True
 
+prop_ExtendedNumObeysIdFunctorLaw :: ExtendedNum Integer -> Bool
+prop_ExtendedNumObeysIdFunctorLaw x = fmap id x == id x
+
 tests =
         [
         testGroup "Negamax Tests"
                 [
-                        testProperty "abs and signum satisfies law specified in Num" prop_AbsSignum
+                        testProperty "abs and signum satisfies law specified in Num" prop_AbsSignum,
+                        testProperty "ExtendedNum obeys the functor law `fmap id = id`" prop_ExtendedNumObeysIdFunctorLaw
                 ]
         , testGroup "TicTacToe Tests"
                 [
