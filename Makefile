@@ -7,7 +7,7 @@ clean:
 	-rm *.hi
 	-rm *.o
 	-rm Game
-	-rm SuperGame
+	-rm Gui
 
 test:
 	cabal configure --enable-tests
