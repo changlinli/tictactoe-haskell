@@ -128,15 +128,16 @@ findBestMove :: forall move state.
         (state -> ExtendedNum Integer) ->
         Int ->
         move
-findBestMove state moveFunc checkGameOverFunc generatePossibleMovesFunc evalFunc depth = foldl1 biggerOne moveList where
-        biggerOne :: move -> move -> move
+findBestMove state moveFunc checkGameOverFunc generatePossibleMovesFunc evalFunc depth = fst $ foldl biggerOne initialMoveGuess moveList where
+        biggerOne :: (move, ExtendedNum Integer) -> move -> (move, ExtendedNum Integer)
         -- Note that we choose the least favorable state because all the
         -- states are calculated from the perspective of the opposing
         -- player
-        biggerOne acc newMove = if newMoveScore < accScore
-                                   then newMove
-                                   else acc
+        biggerOne (acc, accScore) newMove = if newMoveScore < accScore
+                                   then (newMove, newMoveScore)
+                                   else (acc, accScore)
                 where newMoveScore = evaluateAB (generateNegamaxTree (moveFunc newMove state) moveFunc checkGameOverFunc generatePossibleMovesFunc) evalFunc depth
-                      accScore = evaluateAB (generateNegamaxTree (moveFunc acc state) moveFunc checkGameOverFunc generatePossibleMovesFunc) evalFunc depth
         moveList :: [move]
         moveList = generatePossibleMovesFunc state
+        initialMoveGuess :: (move, ExtendedNum Integer)
+        initialMoveGuess = (moveList !! 0, PosInf)
