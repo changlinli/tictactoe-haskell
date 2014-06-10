@@ -25,13 +25,14 @@ newGameBoardWidget board = VA.newWidget state createWidgetLogic where
                 return $ Vty.string (VA.getNormalAttr context) (Tic.showGameBoard gameBoard)
 
 playAI :: Tic.GameState -> VA.Widget VA.FormattedText -> IO ()
-playAI Tic.Player1Win widget = VA.schedule $ VA.setText widget (DT.pack "Player 1 Won!")
-playAI Tic.Player2Win widget = VA.schedule $ VA.setText widget (DT.pack "Player 2 Won!")
-playAI Tic.Tie widget = VA.schedule $ VA.setText widget (DT.pack "There was a tie!")
+playAI Tic.Player1Win widget = VA.schedule $ (VA.setText widget (DT.pack "Player 1 Won!") >> VA.shutdownUi)
+playAI Tic.Player2Win widget = VA.schedule $ (VA.setText widget (DT.pack "Player 2 Won!") >> VA.shutdownUi)
+playAI Tic.Tie widget = VA.schedule $ (VA.setText widget (DT.pack "There was a tie!") >> VA.shutdownUi)
 playAI state widget = do
         moveCoord <- return (Tic.findBestMove state)
         newState <- return $ Tic.playMove moveCoord state
         VA.schedule $ VA.setText widget (DT.pack (Tic.showGameBoard $ Tic.currentBoard newState))
+        CC.threadDelay 1000000
         playAI (Tic.checkGameOver newState) widget
 
 main :: IO ()
@@ -41,7 +42,8 @@ main = do
         gameBoardWidget `VA.onKeyPressed` \_ key _ ->
                 if key == Vty.KASCII 'q' then VA.shutdownUi >> return True
                                         else return False
-        ui <- VA.centered gameBoardWidget
+        borderedGameBoard <- VA.bordered gameBoardWidget
+        ui <- VA.centered borderedGameBoard
         fg <- VA.newFocusGroup
         VA.addToFocusGroup fg gameBoardWidget
         c <- VA.newCollection
