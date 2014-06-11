@@ -35,6 +35,7 @@ playGameVty 3 state widget = do
         VA.schedule $ VA.setText widget (DT.pack (Tic.showGameBoard $ Tic.currentBoard newState))
         CC.threadDelay 1000000
         playGameVty 3 (Tic.checkGameOver newState) widget
+playGameVty _ state widget = error "playGameVty should only have Int arguments of 1, 2, or 3"
 
 main :: IO ()
 main = do
@@ -44,11 +45,13 @@ main = do
                 if key == Vty.KASCII 'q' then VA.shutdownUi >> return True
                                         else return False
         borderedGameBoard <- VA.bordered gameBoardWidget
-        ui <- VA.centered borderedGameBoard
+        centeredBoard <- VA.hCentered borderedGameBoard
+        centeredTitle <- (VA.plainText $ (DT.pack "TICTACTOE")) >>= VA.hCentered
+        ui <- VA.vBox centeredTitle centeredBoard >>= VA.centered
         fg <- VA.newFocusGroup
-        VA.addToFocusGroup fg gameBoardWidget
+        _ <- VA.addToFocusGroup fg gameBoardWidget
         collection <- VA.newCollection
         _ <- VA.addToCollection collection ui fg
-        CC.forkIO $ playGameVty 3 gameStart gameBoardWidget
+        _ <- CC.forkIO $ playGameVty 3 gameStart gameBoardWidget
         VA.runUi collection VA.defaultContext
         putStrLn "Now we're done!"
