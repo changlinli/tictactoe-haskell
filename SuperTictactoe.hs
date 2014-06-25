@@ -165,21 +165,18 @@ playHumanMove state = do
                 superBoard = currentSuperBoard state
                 miniBoardCoord = currentMiniBoard state
 
-playGameAI :: Int -> SuperGameState -> IO ()
+playGameAI :: Tic.GameType -> SuperGameState -> IO ()
 playGameAI _ Player1WinSuper = putStrLn "Player 1 Wins!"
 playGameAI _ Player2WinSuper = putStrLn "Player 2 Wins!"
 playGameAI _ TieSuper = putStrLn "There is a tie!"
-playGameAI 0 state = playHumanMove state >>= playGameAI 0
+playGameAI Tic.PlayerVsPlayer state = playHumanMove state >>= playGameAI Tic.PlayerVsPlayer
 
-playGameAI 1 state
-        | player == Tic.Player1 = playHumanMove state >>= playGameAI 1
-        | player == Tic.Player2 = playAIMove state maximumDepth >>= playGameAI 1
-        where player = currentPlayer state
+playGameAI Tic.PlayerVsComp state@SuperPlayState{currentPlayer=player}
+        | player == Tic.Player1 = playHumanMove state >>= playGameAI Tic.PlayerVsComp
+        | otherwise = playAIMove state maximumDepth >>= playGameAI Tic.PlayerVsComp
 
-playGameAI 2 state
-        | player == Tic.Player2 = playHumanMove state >>= playGameAI 2
-        | player == Tic.Player1 = playAIMove state maximumDepth >>= playGameAI 2
-        where player = currentPlayer state
+playGameAI Tic.CompVsPlayer state@SuperPlayState{currentPlayer=player}
+        | player == Tic.Player2 = playHumanMove state >>= playGameAI Tic.CompVsPlayer
+        | otherwise = playAIMove state maximumDepth >>= playGameAI Tic.CompVsPlayer
 
-playGameAI 3 state = playAIMove state maximumDepth >>= playGameAI 3
-playGameAI _ _ = error "Can only use 0, 1, 2, 3 in the first argument of playGameAI!"
+playGameAI Tic.CompVsComp state = playAIMove state maximumDepth >>= playGameAI Tic.CompVsComp

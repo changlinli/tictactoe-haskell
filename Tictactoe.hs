@@ -23,6 +23,8 @@ showGameBoardUnit Nothing = " "
 type GameBoard = [[GameBoardUnit]]
 data GameState = PlayState { currentBoard :: GameBoard, currentPlayer :: Players } | Player1Win | Player2Win | Tie deriving (Show, Eq)
 
+data GameType = PlayerVsPlayer | PlayerVsComp | CompVsPlayer | CompVsComp
+
 nextPlayer :: Players -> Players
 nextPlayer Player1 = Player2
 nextPlayer Player2 = Player1
@@ -211,22 +213,21 @@ showMoveResult move state =
         playMoveRobust move state >>=
         (\y@PlayState {currentBoard=changed} -> putStrLn (showGameBoard changed) >> return (checkGameOver y))
 
-playGameAI :: Int -> GameState -> IO ()
+playGameAI :: GameType -> GameState -> IO ()
 playGameAI _ Player1Win = putStrLn "Player 1 wins!"
 playGameAI _ Player2Win = putStrLn "Player 2 wins!"
 playGameAI _ Tie = putStrLn "There is a tie!"
-playGameAI 0 PlayState {currentBoard=board, currentPlayer=player} = do
+playGameAI PlayerVsPlayer PlayState {currentBoard=board, currentPlayer=player} = do
         putStrLn (showGameBoard board)
         x <- getInputWithRetry
         y <- playMoveRobust x (PlayState {currentBoard=board, currentPlayer=player})
         z <- return (checkGameOver y)
-        playGameAI 0 z
-playGameAI 1 state
-        | currentPlayer state == Player1 = getInputWithRetry >>= (\x -> showMoveResult x state) >>= playGameAI 1
-        | currentPlayer state == Player2 = return (findBestMove state) >>= (\x -> showMoveResult x state) >>= playGameAI 1
-playGameAI 2 state
-        | currentPlayer state == Player2 = getInputWithRetry >>= (\x -> showMoveResult x state) >>= playGameAI 2
-        | currentPlayer state == Player1 = return (findBestMove state) >>= (\x -> showMoveResult x state) >>= playGameAI 2
-playGameAI 3 state =
-        return (findBestMove state) >>= (\x -> showMoveResult x state) >>= playGameAI 3
-playGameAI _ _ = error "Can only use 0, 1, 2, 3 in the first argument of playGameAI!"
+        playGameAI PlayerVsPlayer z
+playGameAI PlayerVsComp state@PlayState{currentPlayer=player}
+        | player == Player1 = getInputWithRetry >>= (\x -> showMoveResult x state) >>= playGameAI PlayerVsComp
+        | otherwise = return (findBestMove state) >>= (\x -> showMoveResult x state) >>= playGameAI PlayerVsComp
+playGameAI CompVsPlayer state@PlayState{currentPlayer=player}
+        | player == Player2 = getInputWithRetry >>= (\x -> showMoveResult x state) >>= playGameAI CompVsPlayer
+        | otherwise = return (findBestMove state) >>= (\x -> showMoveResult x state) >>= playGameAI CompVsPlayer
+playGameAI CompVsComp state =
+        return (findBestMove state) >>= (\x -> showMoveResult x state) >>= playGameAI CompVsComp
