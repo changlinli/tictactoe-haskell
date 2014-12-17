@@ -54,8 +54,8 @@ executable tictactoe-haskell
 
   ghc-options:        -O2 -Wall
 
-Test-Suite test-foo
+Test-Suite test-tictactoe
   type:               exitcode-stdio-1.0
   main-is:            Tests.hs
-  build-depends:      base ==4.*, test-framework ==0.8.*, QuickCheck ==2.*, HUnit ==1.*, containers ==0.5.*, test-framework-quickcheck2 ==0.3.*, test-framework-hunit ==0.3.*, optparse-applicative==0.8.*, vty-ui >=1.6
+  build-depends:      base ==4.*, test-framework ==0.8.*, QuickCheck ==2.*, HUnit ==1.*, containers ==0.5.*, test-framework-quickcheck2 ==0.3.*, test-framework-hunit ==0.3.*, optparse-applicative==0.8.*, vty-ui >=1.6, silently >= 1.2
   ghc-options:        -Wall -Werror

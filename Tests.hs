@@ -10,6 +10,7 @@ import Test.QuickCheck
 import Test.HUnit
 import Negamax
 import Control.Applicative
+import System.IO.Silently
 import Tictactoe as Tic
 import qualified SuperTictactoe as Sup
 
@@ -46,6 +47,12 @@ prop_checkFullNoValidMoves (randMove, randBoard) = if checkFull (unNewGameBoard 
 prop_ExtendedNumObeysIdFunctorLaw :: ExtendedNum Integer -> Bool
 prop_ExtendedNumObeysIdFunctorLaw x = fmap id x == id x
 
+prop_interleaveInitialEmptyList :: [Integer] -> Bool
+prop_interleaveInitialEmptyList xs = Tic.interleave [] xs == xs
+
+prop_interleaveSecondEmptyList :: [Integer] -> Bool
+prop_interleaveSecondEmptyList xs = Tic.interleave xs [] == xs
+
 tests =
         [
         testGroup "Negamax Tests"
@@ -61,7 +68,9 @@ tests =
                         testCase "Player 1 finds move to block player 2 win" test_4,
                         testCase "isValidMove rejects inputs that imply moves with negative index" test_10,
                         testCase "isValidMove rejects inputs that imply moves with too high of an index" test_11,
-                        testProperty "checkFull board == True implies that isValidMove will be false for any move on that board" prop_checkFullNoValidMoves
+                        testProperty "checkFull board == True implies that isValidMove will be false for any move on that board" prop_checkFullNoValidMoves,
+                        testProperty "interleave when given an empty list as the first argument returns the second argument unchanged" prop_interleaveInitialEmptyList,
+                        testProperty "interleave when given an empty list as the second argumet returns the first argument unchanged" prop_interleaveSecondEmptyList
                 ]
         , testGroup "SuperTicTacToe Tests"
                 [
@@ -116,7 +125,7 @@ test_16 = assert (fmap ((==) True)
                  (fmap ((/=) Sup.Player2WinSuper) nextState) *||*
                  (fmap ((/=) nearlyFullSuperBoardSuperState) nextState)
         ))
-        where nextState = Sup.playAIMove nearlyFullSuperBoardSuperState 4
+        where nextState = silence $ Sup.playAIMove nearlyFullSuperBoardSuperState 4
               x *||* y = (||) <$> x <*> y
               infixr 2 *||*
 
@@ -127,7 +136,7 @@ test_17 = assert (fmap ((==) True)
                  (fmap ((/=) Sup.Player2WinSuper) nextState) *&&*
                  (fmap ((/=) Sup.startingSuperState) nextState)
         ))
-        where nextState = Sup.playAIMove Sup.startingSuperState 2
+        where nextState = silence $ Sup.playAIMove Sup.startingSuperState 2
               x *&&* y = (&&) <$> x <*> y
               infixr 2 *&&*
 
