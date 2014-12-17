@@ -6,3 +6,5 @@ game
 dist
 Setup.hs
 *.prof
+.cabal-sandbox
+cabal.sandbox.config
