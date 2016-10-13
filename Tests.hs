@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleInstances, CPP #-}
 {-# OPTIONS_GHC -fno-warn-missing-signatures -fno-warn-orphans
 -fno-warn-unused-binds #-}
 
@@ -6,10 +6,13 @@ import Test.Framework (defaultMain, testGroup)
 import Test.Framework.Providers.HUnit
 import Test.Framework.Providers.QuickCheck2 (testProperty)
 import Control.Monad
+#if MIN_VERSION_base(4,8,0)
+#else
+import Control.Applicative
+#endif
 import Test.QuickCheck
 import Test.HUnit
 import Negamax
-import Control.Applicative
 import System.IO.Silently
 import Tictactoe as Tic
 import qualified SuperTictactoe as Sup
@@ -47,12 +50,6 @@ prop_checkFullNoValidMoves (randMove, randBoard) = if checkFull (unNewGameBoard 
 prop_ExtendedNumObeysIdFunctorLaw :: ExtendedNum Integer -> Bool
 prop_ExtendedNumObeysIdFunctorLaw x = fmap id x == id x
 
-prop_interleaveInitialEmptyList :: [Integer] -> Bool
-prop_interleaveInitialEmptyList xs = Tic.interleave [] xs == xs
-
-prop_interleaveSecondEmptyList :: [Integer] -> Bool
-prop_interleaveSecondEmptyList xs = Tic.interleave xs [] == xs
-
 tests =
         [
         testGroup "Negamax Tests"
@@ -68,9 +65,7 @@ tests =
                         testCase "Player 1 finds move to block player 2 win" test_4,
                         testCase "isValidMove rejects inputs that imply moves with negative index" test_10,
                         testCase "isValidMove rejects inputs that imply moves with too high of an index" test_11,
-                        testProperty "checkFull board == True implies that isValidMove will be false for any move on that board" prop_checkFullNoValidMoves,
-                        testProperty "interleave when given an empty list as the first argument returns the second argument unchanged" prop_interleaveInitialEmptyList,
-                        testProperty "interleave when given an empty list as the second argumet returns the first argument unchanged" prop_interleaveSecondEmptyList
+                        testProperty "checkFull board == True implies that isValidMove will be false for any move on that board" prop_checkFullNoValidMoves
                 ]
         , testGroup "SuperTicTacToe Tests"
                 [
